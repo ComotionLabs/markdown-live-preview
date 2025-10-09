@@ -45,7 +45,7 @@ npm install
 Don't worry if you're not a developer! This tool is designed to be easy to use for everyone.
 
 ### What You Need
-1. **Node.js installed** on your computer ([Download here](https://nodejs.org/) - choose the LTS version)
+1. **Node.js installed** on your computer ([Download here](https://nodejs.org/en/download) - choose the LTS version)
 2. **A text editor** - Use whatever you're comfortable with:
    - Notepad (Windows)
    - TextEdit (Mac)
