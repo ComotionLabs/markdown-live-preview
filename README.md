@@ -30,52 +30,96 @@ npm install
 
 ## Usage
 
-### Running Locally
+### Quick Start (Recommended)
 
-1. Create a Markdown file in the project root (or use an existing one):
+**Use NPM scripts (works on all platforms):**
 ```bash
-echo "# Hello World" > example.md
+npm run preview yourfile.md
+npm run preview yourfile.md 8080  # custom port
 ```
 
-2. Update the `MARKDOWN_FILE` constant in `server.js` to point to your file:
-```javascript
-const MARKDOWN_FILE = 'example.md';
-```
+**Use the shell scripts:**
 
-3. Start the server:
+macOS/Linux:
 ```bash
-npm start
+./preview.sh yourfile.md
+./preview.sh yourfile.md 8080  # custom port
 ```
 
-4. Open your browser and navigate to:
+Windows:
+```batch
+preview.bat yourfile.md
+preview.bat yourfile.md 8080
 ```
-http://localhost:3000
-```
 
-5. Edit your Markdown file and watch the preview update in real-time!
-
-### Development Mode
-
-For development with auto-restart on server changes:
+**Use with npx (if published or linked):**
 ```bash
-npm run dev
+npx markdown-live-preview yourfile.md
+npx markdown-live-preview yourfile.md 8080  # custom port
+```
+
+**After installing globally:**
+```bash
+npm install -g .
+md-preview yourfile.md
+md-preview yourfile.md 8080  # custom port
+```
+
+### What Happens
+
+1. ✅ Dependencies are automatically checked/installed (shell scripts only)
+2. 🚀 Server starts and watches your markdown file
+3. 🌐 Browser automatically opens to http://localhost:3000
+4. ✏️  Edit your markdown file in any editor
+5. 🔄 Preview updates in real-time automatically!
+
+### Manual Usage
+
+If you prefer to run the server directly:
+
+```bash
+MARKDOWN_FILE=yourfile.md node server.js
+```
+
+**Windows (CMD):**
+```batch
+set MARKDOWN_FILE=yourfile.md && node server.js
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:MARKDOWN_FILE="yourfile.md"; node server.js
+```
+
+**Disable auto-open browser:**
+```bash
+AUTO_OPEN=false MARKDOWN_FILE=yourfile.md node server.js
 ```
 
 ## Configuration
 
-You can customize the following settings in `server.js`:
+You can customize the port by setting the `PORT` environment variable:
 
-- `PORT`: Server port (default: 3000)
-- `MARKDOWN_FILE`: Path to the Markdown file to preview (default: 'CTS_Statement_of_Work.md')
+```bash
+./preview.sh yourfile.md 8080
+```
+
+Or manually:
+```bash
+PORT=8080 MARKDOWN_FILE=yourfile.md node server.js
+```
 
 ## Project Structure
 
 ```
 markdown-live-preview/
    server.js           # Main Express server with WebSocket support
+   cli.js              # CLI wrapper for npm/npx support
+   preview.sh          # macOS/Linux launcher script
+   preview.bat         # Windows launcher script
    package.json        # Project dependencies and scripts
-   LICENSE            # MIT License
-   README.md          # This file
+   LICENSE             # MIT License
+   README.md           # This file
 ```
 
 ## How It Works

@@ -5,13 +5,30 @@ const path = require('path');
 const chokidar = require('chokidar');
 const { Server } = require('socket.io');
 const http = require('http');
+const { exec } = require('child_process');
+
+// Configure marked to suppress deprecation warnings
+marked.setOptions({
+  mangle: false,
+  headerIds: false
+});
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = 3000;
-const MARKDOWN_FILE = 'CTS_Statement_of_Work.md';
+const PORT = process.env.PORT || 3000;
+const MARKDOWN_FILE = process.env.MARKDOWN_FILE;
+
+// Check if MARKDOWN_FILE is provided
+if (!MARKDOWN_FILE) {
+  console.error('\n❌ Error: No markdown file specified!\n');
+  console.error('Please set the MARKDOWN_FILE environment variable:');
+  console.error('  MARKDOWN_FILE=yourfile.md node server.js\n');
+  console.error('Or use the launcher script:');
+  console.error('  ./preview.sh yourfile.md\n');
+  process.exit(1);
+}
 
 // Serve static files
 app.use(express.static('public'));
@@ -105,15 +122,19 @@ app.get('/', (req, res) => {
 function updateMarkdown() {
   try {
     if (!fs.existsSync(MARKDOWN_FILE)) {
-      io.emit('error', `File ${MARKDOWN_FILE} not found`);
+      const errorMsg = `❌ File not found: ${MARKDOWN_FILE}\n\nPlease make sure the file exists and try again.`;
+      console.error(errorMsg);
+      io.emit('error', errorMsg);
       return;
     }
-    
+
     const markdown = fs.readFileSync(MARKDOWN_FILE, 'utf8');
     const html = marked(markdown);
     io.emit('markdown-update', html);
   } catch (error) {
-    io.emit('error', `Error reading file: ${error.message}`);
+    const errorMsg = `❌ Error reading file: ${error.message}`;
+    console.error(errorMsg);
+    io.emit('error', errorMsg);
   }
 }
 
@@ -134,10 +155,40 @@ io.on('connection', (socket) => {
   });
 });
 
+// Function to open browser
+function openBrowser(url) {
+  const platform = process.platform;
+  let command;
+
+  switch (platform) {
+    case 'darwin':  // macOS
+      command = `open ${url}`;
+      break;
+    case 'win32':   // Windows
+      command = `start ${url}`;
+      break;
+    default:        // Linux and others
+      command = `xdg-open ${url}`;
+      break;
+  }
+
+  exec(command, (error) => {
+    if (error) {
+      console.log(`Could not automatically open browser. Please open: ${url}`);
+    }
+  });
+}
+
 server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  const url = `http://localhost:${PORT}`;
+  console.log(`Server running at ${url}`);
   console.log(`Watching ${MARKDOWN_FILE} for changes...`);
-  
+
   // Initial load
   updateMarkdown();
+
+  // Auto-open browser if AUTO_OPEN is not explicitly set to false
+  if (process.env.AUTO_OPEN !== 'false') {
+    setTimeout(() => openBrowser(url), 1000);
+  }
 });
