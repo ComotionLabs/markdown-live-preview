@@ -55,7 +55,7 @@ Don't worry if you're not a developer! This tool is designed to be easy to use f
 ### Step-by-Step Guide
 
 **Step 1: Get the tool**
-1. Download the repository as a ZIP file from [GitHub](https://github.com/ComotionLabs/markdown-live-preview)
+1. Download the latest release as a ZIP file from [GitHub](https://github.com/ComotionLabs/markdown-live-preview/releases/latest)
 2. Extract the ZIP file to a folder on your computer
 3. Remember where you saved it!
 
