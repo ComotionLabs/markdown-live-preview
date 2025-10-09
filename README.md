@@ -2,6 +2,18 @@
 
 A lightweight Node.js server for live Markdown preview with auto-reload and real-time rendering. View your Markdown files in the browser with instant updates as you edit.
 
+## Why This Tool?
+
+Creating high-quality documentation is essential to modern development workflows, especially as AI-powered tools become integral to how we work. As Large Language Models (LLMs) like ChatGPT and Claude increasingly generate documentation in Markdown format, we face a common challenge: **seeing exactly how your Markdown documents will render before publishing them**.
+
+Without an efficient preview mechanism, teams often experience a frustrating cycle of editing, committing, checking GitHub's render, and repeating. Markdown Live Preview eliminates this friction by providing instant visual feedback as you edit.
+
+### Perfect for:
+- **Working with AI assistants** - Review LLM-generated Markdown instantly
+- **README development** - See your formatting as you write
+- **Documentation workflows** - Edit in any text editor, preview in real-time
+- **Cross-functional teams** - Non-technical contributors can see formatting feedback immediately
+
 ## Features
 
 - Real-time Markdown rendering with live reload
@@ -27,6 +39,65 @@ cd markdown-live-preview
 ```bash
 npm install
 ```
+
+## Quick Start for Non-Technical Users
+
+Don't worry if you're not a developer! This tool is designed to be easy to use for everyone.
+
+### What You Need
+1. **Node.js installed** on your computer ([Download here](https://nodejs.org/) - choose the LTS version)
+2. **A text editor** - Use whatever you're comfortable with:
+   - Notepad (Windows)
+   - TextEdit (Mac)
+   - VS Code (recommended for both)
+   - Any other text editor
+
+### Step-by-Step Guide
+
+**Step 1: Get the tool**
+1. Download the repository as a ZIP file from [GitHub](https://github.com/ComotionLabs/markdown-live-preview)
+2. Extract the ZIP file to a folder on your computer
+3. Remember where you saved it!
+
+**Step 2: Open your Markdown file**
+1. Create or open your `.md` file in your text editor
+2. Save it somewhere you can find it
+
+**Step 3: Start the preview**
+
+**On Windows:**
+1. Open File Explorer and navigate to where you extracted the tool
+2. Hold Shift and right-click in the folder → Select "Open PowerShell window here"
+3. Type: `.\preview.bat C:\path\to\your\file.md` (replace with your actual file path)
+4. Press Enter
+
+**On Mac:**
+1. Open Terminal (search for "Terminal" in Spotlight)
+2. Type: `cd ` (with a space after cd)
+3. Drag the folder where you extracted the tool into Terminal
+4. Press Enter
+5. Type: `./preview.sh /path/to/your/file.md` (or drag your .md file into Terminal)
+6. Press Enter
+
+**Step 4: Edit and watch!**
+1. Your browser will automatically open showing the preview
+2. Edit your Markdown file in your text editor
+3. Save the file (Ctrl+S or Cmd+S)
+4. Watch the preview update automatically!
+
+### Common Use Case: Working with ChatGPT/Claude
+1. Ask ChatGPT or Claude to generate Markdown documentation
+2. Copy the Markdown they provide
+3. Paste it into a `.md` file and save it
+4. Run the preview tool pointing to that file
+5. See how it looks instantly!
+6. Ask the AI to refine sections, paste updates, and see changes immediately
+
+### Troubleshooting
+- **"Command not found"** - Make sure you installed Node.js and restarted your terminal
+- **"File not found"** - Check the path to your Markdown file is correct
+- **Browser doesn't open** - Manually open http://localhost:3000 in your browser
+- **Need help?** - Open an issue on [GitHub](https://github.com/ComotionLabs/markdown-live-preview/issues)
 
 ## Usage
 
