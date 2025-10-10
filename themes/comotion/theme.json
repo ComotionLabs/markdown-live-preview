@@ -1,0 +1,8 @@
+{
+  "name": "comotion",
+  "fontFamily": "Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
+  "logoSrc": "/themes/comotion/assets/comotion-logo-svg-colour.svg",
+  "logoAlt": "Comotion",
+  "headingNumbering": true,
+  "headingNumberingMaxLevel": 3
+}

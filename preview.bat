@@ -1,6 +1,6 @@
 @echo off
 REM Markdown Live Preview Launcher for Windows
-REM Usage: preview.bat [markdown-file] [port]
+REM Usage: preview.bat [markdown-file] [port] [--theme <name>]
 
 setlocal enabledelayedexpansion
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Markdown Live Preview Launcher for macOS/Linux
-# Usage: ./preview.sh [markdown-file] [port]
+# Usage: ./preview.sh [markdown-file] [port] [--theme <name>]
 
 # Colors for output
 GREEN='\033[0;32m'
