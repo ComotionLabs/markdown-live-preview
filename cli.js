@@ -6,24 +6,38 @@ const fs = require('fs');
 
 // Get command line arguments
 const args = process.argv.slice(2);
+let themeArg = null;
+const cleanArgs = [];
+for (let i = 0; i < args.length; i++) {
+  const arg = args[i];
+  if (arg === '--theme' || arg === '-t') {
+    themeArg = args[i + 1] || null;
+    i++;
+  } else if (arg.startsWith('--theme=')) {
+    themeArg = arg.split('=')[1] || null;
+  } else {
+    cleanArgs.push(arg);
+  }
+}
 
 // Show usage if no arguments
-if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+if (cleanArgs.length === 0 || cleanArgs[0] === '--help' || cleanArgs[0] === '-h') {
   console.log(`
   📄 Markdown Live Preview
 
   Usage:
-    md-preview <markdown-file> [port]
-    npm run preview <markdown-file> [port]
-    npx markdown-live-preview <markdown-file> [port]
+    md-preview <markdown-file> [port] [--theme <name>]
+    npm run preview <markdown-file> [port] [--theme <name>]
+    npx markdown-live-preview <markdown-file> [port] [--theme <name>]
 
   Arguments:
     markdown-file    Path to the markdown file to preview
     port            Optional port number (default: 3000)
+    --theme, -t     Optional theme name (folder under themes/)
 
   Examples:
-    md-preview README.md
-    md-preview docs/guide.md 8080
+    md-preview README.md --theme comotion
+    md-preview docs/guide.md 8080 --theme comotion
     npm run preview README.md
     npx markdown-live-preview README.md
 
@@ -35,15 +49,15 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
 }
 
 // Show version
-if (args[0] === '--version' || args[0] === '-v') {
+if (cleanArgs[0] === '--version' || cleanArgs[0] === '-v') {
   const pkg = require('./package.json');
   console.log(`v${pkg.version}`);
   process.exit(0);
 }
 
 // Get markdown file and port from arguments
-const markdownFile = args[0];
-const port = args[1] || 3000;
+const markdownFile = cleanArgs[0];
+const port = cleanArgs[1] || 3000;
 
 // Check if file exists
 if (!fs.existsSync(markdownFile)) {
@@ -68,7 +82,8 @@ const server = spawn('node', [serverPath], {
   env: {
     ...process.env,
     MARKDOWN_FILE: absolutePath,
-    PORT: port.toString()
+    PORT: port.toString(),
+    THEME: themeArg || process.env.THEME || ''
   },
   stdio: 'inherit'
 });

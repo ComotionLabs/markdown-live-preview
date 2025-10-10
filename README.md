@@ -115,18 +115,21 @@ macOS/Linux:
 ```bash
 ./preview.sh yourfile.md
 ./preview.sh yourfile.md 8080  # custom port
+./preview.sh yourfile.md --theme comotion  # use a theme
 ```
 
 Windows:
 ```batch
 preview.bat yourfile.md
 preview.bat yourfile.md 8080
+preview.bat yourfile.md --theme comotion  REM use a theme
 ```
 
 **Use with npx (if published or linked):**
 ```bash
 npx markdown-live-preview yourfile.md
 npx markdown-live-preview yourfile.md 8080  # custom port
+npx markdown-live-preview yourfile.md --theme comotion  # use a theme
 ```
 
 **After installing globally:**
@@ -134,6 +137,7 @@ npx markdown-live-preview yourfile.md 8080  # custom port
 npm install -g .
 md-preview yourfile.md
 md-preview yourfile.md 8080  # custom port
+md-preview yourfile.md --theme comotion  # use a theme
 ```
 
 ### What Happens
@@ -179,6 +183,63 @@ Or manually:
 ```bash
 PORT=8080 MARKDOWN_FILE=yourfile.md node server.js
 ```
+
+### Document Title
+
+The preview uses the first top-level heading in your markdown as the document title. It is shown above the content and used for the browser tab.
+
+Write your title using either format at the very top of the file:
+
+```md
+# Your Document Title
+
+Intro text...
+```
+
+or Setext style:
+
+```md
+Your Document Title
+===================
+
+Intro text...
+```
+
+That first title line is removed from the content to avoid duplication and appears as the document title element.
+
+### Themes
+
+#### Use a Theme
+
+- Via CLI:
+  - `md-preview README.md --theme comotion`
+  - `npx markdown-live-preview README.md --theme comotion`
+  - `./preview.sh README.md --theme comotion`
+  - `preview.bat README.md --theme comotion`
+- Via environment variable:
+  - `THEME=comotion MARKDOWN_FILE=README.md node server.js`
+
+When a theme is active, its font is applied to the whole document and its logo is rendered at the top of the document content (so it appears when printing). The live preview header remains on-screen but is hidden in print.
+
+#### Add a Theme
+
+1. Create a folder under `themes/<your-theme-name>/`.
+2. Place any assets under `themes/<your-theme-name>/assets/` (e.g., logos).
+3. Add a `themes/<your-theme-name>/theme.json` with this structure:
+
+```json
+{
+  "name": "your-theme-name",
+  "fontFamily": "Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
+  "logoSrc": "/themes/your-theme-name/assets/your-logo.svg",
+  "logoAlt": "Your Brand"
+}
+```
+
+Notes:
+- `logoSrc` must be a web path rooted at `/themes/...` so the server can serve it.
+- If `logoSrc` is omitted or empty, the logo area is hidden.
+- `fontFamily` is applied to the whole document body.
 
 ## Project Structure
 
