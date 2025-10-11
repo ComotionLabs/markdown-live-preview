@@ -19,6 +19,8 @@ Without an efficient preview mechanism, teams often experience a frustrating cyc
 - Real-time Markdown rendering with live reload
 - WebSocket-based updates for instant preview
 - File watching with automatic change detection
+- Copy to Word functionality with formatting preserved
+- PDF export with headers and footers
 - Clean, responsive UI
 - Error handling and connection status indicators
 
@@ -230,16 +232,143 @@ When a theme is active, its font is applied to the whole document and its logo i
 ```json
 {
   "name": "your-theme-name",
+  "companyName": "Your Company Name",
   "fontFamily": "Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
   "logoSrc": "/themes/your-theme-name/assets/your-logo.svg",
-  "logoAlt": "Your Brand"
+  "logoAlt": "Your Brand",
+  "titleFontSize": "32px",
+  "h1FontSize": "21px",
+  "h2FontSize": "18px",
+  "h3FontSize": "16px",
+  "bodyFontSize": "14px",
+  "headingNumbering": true,
+  "printFooterEnabled": true,
+  "printFooterLabel": "Page",
+  "printMargins": { "top": "22mm", "right": "18mm", "bottom": "22mm", "left": "18mm" },
+  "sensitivityLevels": {
+    "Public": { "bg": "#e7f5ff", "fg": "#0b7285" },
+    "Internal": { "bg": "#f1f3f5", "fg": "#343a40" },
+    "Confidential": { "bg": "#fff3bf", "fg": "#7f5f01" },
+    "Restricted": { "bg": "#ffe3e3", "fg": "#c92a2a" }
+  }
 }
 ```
 
-Notes:
-- `logoSrc` must be a web path rooted at `/themes/...` so the server can serve it.
-- If `logoSrc` is omitted or empty, the logo area is hidden.
-- `fontFamily` is applied to the whole document body.
+Key fields:
+- `companyName`: Appears in the bottom-left of PDF footers
+- `logoSrc`: Must be a web path rooted at `/themes/...` (optional)
+- `fontFamily`: Applied to the whole document body
+- `titleFontSize`: Size of the document title (default: 32px)
+- `h1FontSize`: Size of h1 headings (default: 21px)
+- `h2FontSize`: Size of h2 headings (default: 18px)
+- `h3FontSize`: Size of h3 headings (default: 16px)
+- `bodyFontSize`: Size of body text (default: 14px)
+- `headingNumbering`: Enables automatic numbering for h1-h3 headings
+- `printMargins`: Safe margins for most printers (default: 20mm/15mm)
+- `sensitivityLevels`: Maps sensitivity values to header colors in PDFs
+
+### Export Options
+
+#### Copy to Word
+
+- Click the "📋 Copy to Word" button to copy the document in a format optimized for Microsoft Word
+- The copied content includes:
+  - Document logo (if present in theme)
+  - Document title with proper formatting
+  - All content with preserved styling
+- Simply paste (Ctrl+V or Cmd+V) into Word to maintain formatting
+- Works with both modern Clipboard API and fallback methods for older browsers
+
+#### Convert to PDF
+
+- Click the "📄 Export PDF" button for the most accurate result (uses Puppeteer if installed). You can still use your browser's Print dialog as a fallback.
+- PDF footers display:
+  - **Left side**: Company name (if defined in theme)
+  - **Right side**: Page numbering (e.g., "Page 1 of 2")
+
+Theme options for print:
+- `companyName`: Company name shown in bottom-left of footer
+- `printFooterEnabled`: Whether to show the footer (default true)
+- `printFooterLabel`: Label before page numbers (default: "Page")
+- `printMargins`: Page margins (default: 20mm top/bottom, 15mm left/right)
+
+Puppeteer (optional):
+- This project treats Puppeteer as an optional dependency to keep install size small.
+- To enable accurate headers/footers and clean margins in PDFs, install it (Node 18+ required for Puppeteer v24+):
+  ```bash
+  npm install puppeteer
+  ```
+- If Puppeteer is not installed, the Export PDF button is hidden. You can still print via your browser menu, but headers/footers may not render correctly.
+
+### Document Metadata
+
+You can add metadata to your documents to control rendering behavior and document classification. Metadata can be specified using either YAML frontmatter or simple inline tags.
+
+#### Sensitivity Classification
+
+Mark your document's sensitivity level for PDF exports (appears in PDF header):
+
+**YAML frontmatter:**
+```md
+---
+sensitivity: Confidential
+---
+
+# Your Title
+...
+```
+
+**Inline format:**
+```md
+Sensitivity: Confidential
+
+# Your Title
+...
+```
+
+Common sensitivity levels:
+- `Public` - Blue header in PDF
+- `Internal` - Gray header in PDF  
+- `Confidential` - Yellow header in PDF
+- `Restricted` - Red header in PDF
+
+#### Document-Level Theme
+
+Specify which theme to use directly in your document, overriding any command-line theme:
+
+**YAML frontmatter:**
+```md
+---
+theme: comotion
+sensitivity: Internal
+---
+
+# Your Title
+...
+```
+
+**Inline format:**
+```md
+Theme: comotion
+Sensitivity: Internal
+
+# Your Title
+...
+```
+
+Features:
+- Document theme overrides command-line `--theme` parameter
+- Theme switches dynamically when opening different documents
+- Affects fonts, logos, margins, and PDF headers/footers
+- Both metadata lines are automatically hidden from rendered output
+
+#### Metadata Processing
+
+- Metadata must appear at the very beginning of the document
+- Both `Theme:` and `Sensitivity:` lines are case-insensitive
+- Values are trimmed of whitespace
+- Inline metadata lines are removed from the rendered content
+- Empty lines following metadata are also removed for cleaner output
 
 ## Project Structure
 

@@ -1,8 +1,26 @@
 {
   "name": "comotion",
+  "companyName": "Comotion Business Solutions",
   "fontFamily": "Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
   "logoSrc": "/themes/comotion/assets/comotion-logo-svg-colour.svg",
   "logoAlt": "Comotion",
+  "titleFontSize": "32px",
+  "h1FontSize": "21px",
+  "h2FontSize": "18px",
+  "h3FontSize": "16px",
+  "bodyFontSize": "14px",
   "headingNumbering": true,
-  "headingNumberingMaxLevel": 3
+  "headingNumberingMaxLevel": 3,
+  "printFooterEnabled": true,
+  "printFooterLabel": "Page",
+  "printMargins": { "top": "22mm", "right": "18mm", "bottom": "22mm", "left": "18mm" },
+  "printContentBottomPadding": "18mm",
+  "headerFooterFontFamily": "Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
+  "headerFooterFontSize": "0.9em",
+  "sensitivityLevels": {
+    "Public": { "bg": "#f1f3f5", "fg": "#495057" },
+    "Internal": { "bg": "#f1f3f5", "fg": "#495057" },
+    "Confidential": { "bg": "#f1f3f5", "fg": "#495057" },
+    "Restricted": { "bg": "#f1f3f5", "fg": "#495057" }
+  }
 }
