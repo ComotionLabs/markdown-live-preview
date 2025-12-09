@@ -31,16 +31,16 @@ Without an efficient preview mechanism, teams often experience a frustrating cyc
 
 ## Installation
 
-1. Clone the repository:
+Install from source:
+
 ```bash
 git clone https://github.com/ComotionLabs/markdown-live-preview.git
 cd markdown-live-preview
+npm install
+npm install -g .
 ```
 
-2. Install dependencies:
-```bash
-npm install
-```
+This will make the `md-preview` command available globally on your system.
 
 ## Quick Start for Non-Technical Users
 
@@ -56,32 +56,24 @@ Don't worry if you're not a developer! This tool is designed to be easy to use f
 
 ### Step-by-Step Guide
 
-**Step 1: Get the tool**
+**Step 1: Install the tool**
 1. Download the latest release as a ZIP file from [GitHub](https://github.com/ComotionLabs/markdown-live-preview/releases/latest)
 2. Extract the ZIP file to a folder on your computer
-3. Remember where you saved it!
+3. Open Terminal (Mac) or PowerShell (Windows)
+4. Navigate to the extracted folder and run:
+   ```bash
+   npm install
+   npm install -g .
+   ```
 
-**Step 2: Open your Markdown file**
+**Step 2: Use md-preview from anywhere**
 1. Create or open your `.md` file in your text editor
 2. Save it somewhere you can find it
+3. Open Terminal (Mac) or PowerShell (Windows)
+4. Type: `md-preview /path/to/your/file.md` (or drag your .md file into the terminal)
+5. Press Enter
 
-**Step 3: Start the preview**
-
-**On Windows:**
-1. Open File Explorer and navigate to where you extracted the tool
-2. Hold Shift and right-click in the folder → Select "Open PowerShell window here"
-3. Type: `.\preview.bat C:\path\to\your\file.md` (replace with your actual file path)
-4. Press Enter
-
-**On Mac:**
-1. Open Terminal (search for "Terminal" in Spotlight)
-2. Type: `cd ` (with a space after cd)
-3. Drag the folder where you extracted the tool into Terminal
-4. Press Enter
-5. Type: `./preview.sh /path/to/your/file.md` (or drag your .md file into Terminal)
-6. Press Enter
-
-**Step 4: Edit and watch!**
+**Step 3: Edit and watch!**
 1. Your browser will automatically open showing the preview
 2. Edit your Markdown file in your text editor
 3. Save the file (Ctrl+S or Cmd+S)
@@ -91,52 +83,21 @@ Don't worry if you're not a developer! This tool is designed to be easy to use f
 1. Ask ChatGPT or Claude to generate Markdown documentation
 2. Copy the Markdown they provide
 3. Paste it into a `.md` file and save it
-4. Run the preview tool pointing to that file
+4. Run `md-preview your-file.md`
 5. See how it looks instantly!
 6. Ask the AI to refine sections, paste updates, and see changes immediately
 
 ### Troubleshooting
-- **"Command not found"** - Make sure you installed Node.js and restarted your terminal
+- **"md-preview command not found"** - Make sure you ran `npm install -g .` and restarted your terminal
 - **"File not found"** - Check the path to your Markdown file is correct
 - **Browser doesn't open** - Manually open http://localhost:3000 in your browser
 - **Need help?** - Open an issue on [GitHub](https://github.com/ComotionLabs/markdown-live-preview/issues)
 
 ## Usage
 
-### Quick Start (Recommended)
+After installing globally, use the `md-preview` command from anywhere:
 
-**Use NPM scripts (works on all platforms):**
 ```bash
-npm run preview yourfile.md
-npm run preview yourfile.md 8080  # custom port
-```
-
-**Use the shell scripts:**
-
-macOS/Linux:
-```bash
-./preview.sh yourfile.md
-./preview.sh yourfile.md 8080  # custom port
-./preview.sh yourfile.md --theme comotion  # use a theme
-```
-
-Windows:
-```batch
-preview.bat yourfile.md
-preview.bat yourfile.md 8080
-preview.bat yourfile.md --theme comotion  REM use a theme
-```
-
-**Use with npx (if published or linked):**
-```bash
-npx markdown-live-preview yourfile.md
-npx markdown-live-preview yourfile.md 8080  # custom port
-npx markdown-live-preview yourfile.md --theme comotion  # use a theme
-```
-
-**After installing globally:**
-```bash
-npm install -g .
 md-preview yourfile.md
 md-preview yourfile.md 8080  # custom port
 md-preview yourfile.md --theme comotion  # use a theme
@@ -144,46 +105,17 @@ md-preview yourfile.md --theme comotion  # use a theme
 
 ### What Happens
 
-1. ✅ Dependencies are automatically checked/installed (shell scripts only)
-2. 🚀 Server starts and watches your markdown file
-3. 🌐 Browser automatically opens to http://localhost:3000
-4. ✏️  Edit your markdown file in any editor
-5. 🔄 Preview updates in real-time automatically!
-
-### Manual Usage
-
-If you prefer to run the server directly:
-
-```bash
-MARKDOWN_FILE=yourfile.md node server.js
-```
-
-**Windows (CMD):**
-```batch
-set MARKDOWN_FILE=yourfile.md && node server.js
-```
-
-**Windows (PowerShell):**
-```powershell
-$env:MARKDOWN_FILE="yourfile.md"; node server.js
-```
-
-**Disable auto-open browser:**
-```bash
-AUTO_OPEN=false MARKDOWN_FILE=yourfile.md node server.js
-```
+1. 🚀 Server starts and watches your markdown file
+2. 🌐 Browser automatically opens to http://localhost:3000
+3. ✏️  Edit your markdown file in any editor
+4. 🔄 Preview updates in real-time automatically!
 
 ## Configuration
 
-You can customize the port by setting the `PORT` environment variable:
+You can customize the port by passing it as the second argument:
 
 ```bash
-./preview.sh yourfile.md 8080
-```
-
-Or manually:
-```bash
-PORT=8080 MARKDOWN_FILE=yourfile.md node server.js
+md-preview yourfile.md 8080
 ```
 
 ### Document Title
@@ -213,13 +145,11 @@ That first title line is removed from the content to avoid duplication and appea
 
 #### Use a Theme
 
-- Via CLI:
-  - `md-preview README.md --theme comotion`
-  - `npx markdown-live-preview README.md --theme comotion`
-  - `./preview.sh README.md --theme comotion`
-  - `preview.bat README.md --theme comotion`
-- Via environment variable:
-  - `THEME=comotion MARKDOWN_FILE=README.md node server.js`
+Use the `--theme` flag to apply a theme:
+
+```bash
+md-preview README.md --theme comotion
+```
 
 When a theme is active, its font is applied to the whole document and its logo is rendered at the top of the document content (so it appears when printing). The live preview header remains on-screen but is hidden in print.
 

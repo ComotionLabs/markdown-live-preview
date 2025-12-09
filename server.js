@@ -35,6 +35,7 @@ function loadTheme(themeName) {
       h2FontSize: '18px',
       h3FontSize: '16px',
       bodyFontSize: '14px',
+      lineHeight: '1.6',
       companyName: '',
       headingNumbering: false,
       headingNumberingMaxLevel: 3,
@@ -66,6 +67,7 @@ function loadTheme(themeName) {
         h2FontSize: manifest.h2FontSize || '18px',
         h3FontSize: manifest.h3FontSize || '16px',
         bodyFontSize: manifest.bodyFontSize || '14px',
+        lineHeight: manifest.lineHeight || '1.6',
         companyName: manifest.companyName || '',
         headingNumbering: Boolean(manifest.headingNumbering),
         headingNumberingMaxLevel: Number.isInteger(manifest.headingNumberingMaxLevel) ? manifest.headingNumberingMaxLevel : 3,
@@ -95,6 +97,7 @@ function loadTheme(themeName) {
     h2FontSize: '18px',
     h3FontSize: '16px',
     bodyFontSize: '14px',
+    lineHeight: '1.6',
     companyName: '',
     headingNumbering: false,
     headingNumberingMaxLevel: 3,
@@ -531,7 +534,7 @@ app.get('/', (req, res) => {
             max-width: 900px;
             margin: 0 auto;
             padding: 20px;
-            line-height: 1.6;
+            line-height: ${theme.lineHeight};
         }
         .header {
             background: #f8f9fa;
@@ -551,10 +554,10 @@ app.get('/', (req, res) => {
         .content { padding: 0; border: none; background: transparent; }
         .doc-theme-brand { display: ${theme.logoSrc ? 'block' : 'none'}; margin: 16px 0; }
         .doc-theme-logo { height: 44px; }
-        .doc-title { font-size: ${theme.titleFontSize}; font-weight: 700; margin: 8px 0 16px; }
-        #doc-content h1 { font-size: ${theme.h1FontSize}; }
-        #doc-content h2 { font-size: ${theme.h2FontSize}; }
-        #doc-content h3 { font-size: ${theme.h3FontSize}; }
+        .doc-title { font-family: ${theme.fontFamily}; font-size: ${theme.titleFontSize}; font-weight: 700; margin: 8px 0 16px; }
+        #doc-content h1 { font-family: ${theme.fontFamily}; font-size: ${theme.h1FontSize}; }
+        #doc-content h2 { font-family: ${theme.fontFamily}; font-size: ${theme.h2FontSize}; }
+        #doc-content h3 { font-family: ${theme.fontFamily}; font-size: ${theme.h3FontSize}; }
         #doc-content { border: 1px solid #e9ecef; border-radius: 5px; padding: 20px; background: white; }
         .sensitivity-badge { display: none; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 999px; width: fit-content; }
         /* Sensitivity level colors from theme */
@@ -714,29 +717,108 @@ app.get('/', (req, res) => {
           copyWordBtn.addEventListener('click', async () => {
             copyWordBtn.disabled = true;
             try {
+              // Get theme font information from body
+              const bodyStyle = window.getComputedStyle(document.body);
+              const themeFontFamily = bodyStyle.fontFamily;
+              const themeFontSize = bodyStyle.fontSize;
+              const themeLineHeight = bodyStyle.lineHeight;
+
+              // Helper function to convert image to base64
+              const imageToBase64 = async (imgElement) => {
+                return new Promise((resolve, reject) => {
+                  const canvas = document.createElement('canvas');
+                  const ctx = canvas.getContext('2d');
+
+                  const img = new Image();
+                  img.crossOrigin = 'anonymous';
+
+                  img.onload = () => {
+                    canvas.width = img.naturalWidth || img.width;
+                    canvas.height = img.naturalHeight || img.height;
+                    ctx.drawImage(img, 0, 0);
+                    try {
+                      const dataURL = canvas.toDataURL('image/png');
+                      resolve(dataURL);
+                    } catch (e) {
+                      reject(e);
+                    }
+                  };
+
+                  img.onerror = reject;
+                  img.src = imgElement.src;
+                });
+              };
+
               // Get the complete HTML content with title and logo
               let htmlContent = '';
-              
-              // Add logo if present
+
+              // Add logo if present - convert to base64 for Word compatibility
               const logoElement = document.querySelector('.doc-theme-logo');
-              if (logoElement && logoElement.src) {
-                htmlContent += '<div style="margin-bottom: 16px;"><img src="' + logoElement.src + '" style="height: 44px;" /></div>';
+              if (logoElement && logoElement.src && logoElement.offsetParent !== null) {
+                try {
+                  const base64Logo = await imageToBase64(logoElement);
+                  htmlContent += '<div style="margin-bottom: 16px;"><img src="' + base64Logo + '" style="height: 22px; display: block;" alt="Logo" /></div>';
+                } catch (err) {
+                  console.warn('Logo conversion failed:', err);
+                  // Skip logo if conversion fails rather than using potentially broken URL
+                }
               }
-              
+
               // Add title if present
               const titleElement = document.getElementById('doc-title');
               if (titleElement && titleElement.style.display !== 'none') {
                 const titleStyle = window.getComputedStyle(titleElement);
-                htmlContent += '<h1 style="font-size: ' + titleStyle.fontSize + '; font-weight: 700; margin: 8px 0 16px;">' + titleElement.textContent + '</h1>';
+                // Use the actual computed font from the title element to ensure accuracy
+                const titleFont = titleStyle.fontFamily;
+                htmlContent += '<p style="font-family: ' + titleFont + ' !important; font-size: ' + titleStyle.fontSize + '; font-weight: 700; margin: 8px 0 16px; padding: 0;">' + titleElement.textContent + '</p>';
               }
-              
-              // Add main content
-              htmlContent += docContentDiv.innerHTML;
-              
-              // Create a wrapper with styles for Word compatibility
-              const bodyStyle = window.getComputedStyle(document.body);
-              const styledHtml = '<div style="font-family: ' + bodyStyle.fontFamily + '; font-size: ' + bodyStyle.fontSize + '; line-height: 1.6; max-width: 600px;">' + htmlContent + '</div>';
-              
+
+              // Add main content with proper font styling
+              const tempContent = document.createElement('div');
+              tempContent.innerHTML = docContentDiv.innerHTML;
+
+              // First, get computed styles from the actual DOM elements before cloning
+              const originalElements = docContentDiv.querySelectorAll('*');
+              const computedStyles = new Map();
+
+              // Also collect specific heading sizes for the style tag
+              const h1Size = window.getComputedStyle(docContentDiv.querySelector('h1') || document.createElement('h1')).fontSize || '20px';
+              const h2Size = window.getComputedStyle(docContentDiv.querySelector('h2') || document.createElement('h2')).fontSize || '18px';
+              const h3Size = window.getComputedStyle(docContentDiv.querySelector('h3') || document.createElement('h3')).fontSize || '16px';
+
+              originalElements.forEach((el, index) => {
+                const computed = window.getComputedStyle(el);
+                computedStyles.set(index, {
+                  fontFamily: computed.fontFamily,
+                  fontSize: computed.fontSize,
+                  fontWeight: computed.fontWeight
+                });
+              });
+
+              // Apply theme font and sizes to all elements with !important for Word compatibility
+              const allElements = tempContent.querySelectorAll('*');
+              allElements.forEach((el, index) => {
+                const computed = computedStyles.get(index);
+                if (computed) {
+                  const currentStyle = el.getAttribute('style') || '';
+                  // Remove any existing font declarations to avoid conflicts
+                  const cleanedStyle = currentStyle.replace(/font-(family|size|weight):[^;]+;?/gi, '');
+                  el.setAttribute('style', 'font-family: ' + computed.fontFamily + ' !important; font-size: ' + computed.fontSize + ' !important; font-weight: ' + computed.fontWeight + '; ' + cleanedStyle);
+                }
+              });
+
+              htmlContent += tempContent.innerHTML;
+
+              // Create a wrapper with styles and embedded CSS for better Word compatibility
+              const styledHtml = '<html><head><meta charset="utf-8"><style>' +
+                '* { font-family: ' + themeFontFamily + ' !important; } ' +
+                'body { font-family: ' + themeFontFamily + ' !important; font-size: ' + themeFontSize + '; line-height: ' + themeLineHeight + '; margin: 0; padding: 0; } ' +
+                'h1 { font-family: ' + themeFontFamily + ' !important; font-size: ' + h1Size + ' !important; } ' +
+                'h2 { font-family: ' + themeFontFamily + ' !important; font-size: ' + h2Size + ' !important; } ' +
+                'h3 { font-family: ' + themeFontFamily + ' !important; font-size: ' + h3Size + ' !important; } ' +
+                'h4, h5, h6, p, div, span { font-family: ' + themeFontFamily + ' !important; }' +
+                '</style></head><body><div style="max-width: 600px;">' + htmlContent + '</div></body></html>';
+
               // Use Clipboard API to copy both plain text and HTML
               const textContent = docContentDiv.innerText;
               

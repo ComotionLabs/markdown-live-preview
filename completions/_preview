@@ -1,0 +1,53 @@
+#compdef preview
+
+# Zsh completion for markdown preview command
+
+_preview() {
+  local curcontext="$curcontext" state line
+  typeset -A opt_args
+
+  _arguments -C \
+    '1: :->markdown_file' \
+    '2: :->port' \
+    '(-t --theme)'{-t,--theme}'[Specify theme name]:theme:->themes' \
+    '(-h --help)'{-h,--help}'[Show help message]' \
+    '(-v --version)'{-v,--version}'[Show version number]' \
+    '*::arg:->args'
+
+  case $state in
+    markdown_file)
+      _files -g "*.md"
+      ;;
+    port)
+      _message 'port number (default: 3000)'
+      ;;
+    themes)
+      local script_dir="${0:A:h}"
+      local themes_dir
+
+      # Try to find the themes directory
+      if [[ -f ~/.preview-script-path ]]; then
+        local preview_path=$(cat ~/.preview-script-path)
+        themes_dir="${preview_path%/*}/themes"
+      else
+        # Fallback: check common locations
+        for dir in ~/Documents/GitHub/markdown-live-preview ~/.markdown-preview /usr/local/lib/markdown-preview; do
+          if [[ -d "$dir/themes" ]]; then
+            themes_dir="$dir/themes"
+            break
+          fi
+        done
+      fi
+
+      if [[ -d "$themes_dir" ]]; then
+        local -a themes
+        themes=(${(f)"$(ls -1 "$themes_dir" 2>/dev/null)"})
+        _describe 'theme' themes
+      else
+        _message 'theme name'
+      fi
+      ;;
+  esac
+}
+
+_preview "$@"
