@@ -197,6 +197,34 @@ Key fields:
 - `printMargins`: Safe margins for most printers (default: 20mm/15mm)
 - `sensitivityLevels`: Maps sensitivity values to header colors in PDFs
 
+#### Table styling for Copy to Word
+
+You can control how tables are formatted when using the "Copy to Word" button via `tableWordStyling`. Defaults are chosen to match common Markdown renderers (grey borders, light grey banding).
+
+```json
+{
+  "tableWordStyling": {
+    "enabled": true,
+    "borderColor": "#dee2e6",
+    "headerBg": "#f1f3f5",
+    "headerTextWeight": "600",
+    "bandEvenBg": "#fafbfc",
+    "firstColumnBold": true,
+    "firstColumnBg": "",
+    "cellPadding": "8px 12px"
+  }
+}
+```
+
+- `enabled`: Toggle Word-specific table formatting
+- `borderColor`: Table cell border color
+- `headerBg`: Header row background color
+- `headerTextWeight`: Header row font weight
+- `bandEvenBg`: Background color for even body rows (banded rows)
+- `firstColumnBold`: Emphasize first column text
+- `firstColumnBg`: Optional background for first column cells
+- `cellPadding`: Padding for table cells
+
 ### Export Options
 
 #### Copy to Word

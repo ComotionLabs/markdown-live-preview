@@ -1,6 +1,6 @@
 {
   "name": "markdown-live-preview",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Live Markdown preview application",
   "main": "server.js",
   "bin": {

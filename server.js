@@ -50,6 +50,17 @@ function loadTheme(themeName) {
         Internal: { bg: '#f1f3f5', fg: '#343a40' },
         Confidential: { bg: '#fff3bf', fg: '#7f5f01' },
         Restricted: { bg: '#ffe3e3', fg: '#c92a2a' }
+      },
+      // Controls how tables are styled when copying to Word
+      tableWordStyling: {
+        enabled: true,
+        borderColor: '#dee2e6',
+        headerBg: '#f1f3f5',
+        headerTextWeight: '600',
+        bandEvenBg: '#fafbfc',
+        firstColumnBold: true,
+        firstColumnBg: '',
+        cellPadding: '8px 12px'
       }
     };
   }
@@ -58,6 +69,7 @@ function loadTheme(themeName) {
     if (fs.existsSync(manifestPath)) {
       const manifestRaw = fs.readFileSync(manifestPath, 'utf8');
       const manifest = JSON.parse(manifestRaw);
+      const tw = manifest.tableWordStyling || {};
       return {
         fontFamily: manifest.fontFamily || "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
         logoSrc: manifest.logoSrc || '',
@@ -82,11 +94,61 @@ function loadTheme(themeName) {
           Internal: { bg: '#f1f3f5', fg: '#343a40' },
           Confidential: { bg: '#fff3bf', fg: '#7f5f01' },
           Restricted: { bg: '#ffe3e3', fg: '#c92a2a' }
+        },
+        tableWordStyling: {
+          enabled: tw.enabled !== false,
+          borderColor: tw.borderColor || '#dee2e6',
+          headerBg: tw.headerBg || '#f1f3f5',
+          headerTextWeight: String(tw.headerTextWeight || '600'),
+          bandEvenBg: tw.bandEvenBg || '#fafbfc',
+          firstColumnBold: tw.firstColumnBold !== false,
+          firstColumnBg: tw.firstColumnBg || '',
+          cellPadding: tw.cellPadding || '8px 12px'
         }
       };
     }
   } catch (e) {
     console.warn(`Theme load failed for '${themeName}': ${e.message}`);
+    // Fallback: if 'comotion' theme is requested but cannot be read (e.g., macOS Documents permissions),
+    // return a built-in copy so the preview keeps working.
+    if (themeName === 'comotion') {
+      return {
+        fontFamily: "Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
+        logoSrc: "/themes/comotion/assets/comotion-logo-svg-colour.svg",
+        logoAlt: "Comotion",
+        titleFontSize: "36px",
+        h1FontSize: "20px",
+        h2FontSize: "18px",
+        h3FontSize: "16px",
+        bodyFontSize: "14px",
+        lineHeight: "1.7",
+        companyName: "Comotion Business Solutions",
+        headingNumbering: true,
+        headingNumberingMaxLevel: 3,
+        printFooterEnabled: true,
+        printFooterLabel: "Page",
+        printMargins: { top: "22mm", right: "18mm", bottom: "22mm", left: "18mm" },
+        printContentBottomPadding: "18mm",
+        headerFooterFontFamily: "Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
+        headerFooterFontSize: "0.9em",
+        sensitivityLevels: {
+          Public: { bg: "#f1f3f5", fg: "#495057" },
+          Internal: { bg: "#f1f3f5", fg: "#495057" },
+          Confidential: { bg: "#f1f3f5", fg: "#495057" },
+          Restricted: { bg: "#f1f3f5", fg: "#495057" }
+        },
+        tableWordStyling: {
+          enabled: true,
+          borderColor: "#dee2e6",
+          headerBg: "#f1f3f5",
+          headerTextWeight: "600",
+          bandEvenBg: "#fafbfc",
+          firstColumnBold: true,
+          firstColumnBg: "",
+          cellPadding: "8px 12px"
+        }
+      };
+    }
   }
   return {
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
@@ -112,6 +174,16 @@ function loadTheme(themeName) {
       Internal: { bg: '#f1f3f5', fg: '#343a40' },
       Confidential: { bg: '#fff3bf', fg: '#7f5f01' },
       Restricted: { bg: '#ffe3e3', fg: '#c92a2a' }
+    },
+    tableWordStyling: {
+      enabled: true,
+      borderColor: '#dee2e6',
+      headerBg: '#f1f3f5',
+      headerTextWeight: '600',
+      bandEvenBg: '#fafbfc',
+      firstColumnBold: true,
+      firstColumnBg: '',
+      cellPadding: '8px 12px'
     }
   };
 }
@@ -645,6 +717,12 @@ app.get('/', (req, res) => {
         const exportBtn = document.getElementById('export-pdf');
         const copyWordBtn = document.getElementById('copy-word');
         const params = new URLSearchParams(window.location.search);
+        const tableWordStyling = ${JSON.stringify((() => {
+          try { return (theme && theme.tableWordStyling) ? theme.tableWordStyling : {}; } catch (_) { return {}; }
+        })())};
+        const initialTheme = ${JSON.stringify((() => {
+          try { return theme || {}; } catch (_) { return {}; }
+        })())};
         if (params.get('pdf') === '1') {
           document.body.classList.add('pdf-mode');
         }
@@ -655,7 +733,7 @@ app.get('/', (req, res) => {
                 docTitleDiv.style.display = 'none';
                 document.title = 'Markdown Live Preview';
             } else {
-                const { html, title, meta } = payload || {};
+                const { html, title, meta, theme: remoteTheme } = payload || {};
                 docContentDiv.innerHTML = html || '';
                 if (title && title.trim().length > 0) {
                     docTitleDiv.textContent = title;
@@ -664,6 +742,10 @@ app.get('/', (req, res) => {
                 } else {
                     docTitleDiv.style.display = 'none';
                     document.title = 'Markdown Live Preview';
+                }
+                // Apply dynamic theme overrides if present
+                if (remoteTheme && typeof remoteTheme === 'object') {
+                  applyDynamicTheme(remoteTheme);
                 }
             }
             errorDiv.style.display = 'none';
@@ -683,6 +765,33 @@ app.get('/', (req, res) => {
             statusDiv.textContent = '● Disconnected';
             statusDiv.style.color = '#dc3545';
         });
+
+        // Inject or update a <style id="dynamic-theme"> block with theme-dependent CSS
+        function ensureDynamicStyleEl() {
+          let el = document.getElementById('dynamic-theme');
+          if (!el) {
+            el = document.createElement('style');
+            el.id = 'dynamic-theme';
+            document.head.appendChild(el);
+          }
+          return el;
+        }
+        function buildThemeCss(t) {
+          if (!t) return '';
+          return [
+            'body { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.bodyFontSize || '14px') + '; line-height: ' + (t.lineHeight || '1.6') + '; }',
+            '.doc-title { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.titleFontSize || '32px') + '; font-weight: 700; }',
+            '#doc-content h1 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h1FontSize || '21px') + '; }',
+            '#doc-content h2 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h2FontSize || '18px') + '; }',
+            '#doc-content h3 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h3FontSize || '16px') + '; }'
+          ].join('\\n');
+        }
+        function applyDynamicTheme(t) {
+          const el = ensureDynamicStyleEl();
+          el.textContent = buildThemeCss(t);
+        }
+        // Initialize with server-side theme at load
+        try { applyDynamicTheme(initialTheme); } catch (_) {}
 
         if (exportBtn) {
           exportBtn.addEventListener('click', async () => {
@@ -770,12 +879,75 @@ app.get('/', (req, res) => {
                 const titleStyle = window.getComputedStyle(titleElement);
                 // Use the actual computed font from the title element to ensure accuracy
                 const titleFont = titleStyle.fontFamily;
-                htmlContent += '<p style="font-family: ' + titleFont + ' !important; font-size: ' + titleStyle.fontSize + '; font-weight: 700; margin: 8px 0 16px; padding: 0;">' + titleElement.textContent + '</p>';
+                const titleLineHeight = titleStyle.lineHeight || '1.2';
+                // Use an H1 with inline size and !important so Word preserves the size on paste
+                htmlContent += '<h1 style="font-family: ' + titleFont + ' !important; font-size: ' + titleStyle.fontSize + ' !important; line-height: ' + titleLineHeight + ' !important; font-weight: 700; margin: 8px 0 16px; padding: 0;">' + titleElement.textContent + '</h1>';
               }
 
               // Add main content with proper font styling
               const tempContent = document.createElement('div');
               tempContent.innerHTML = docContentDiv.innerHTML;
+
+              // Apply Word-friendly table styling inline if enabled by theme
+              const applyWordTableStyling = (root, cfg) => {
+                if (!cfg || cfg.enabled === false) return;
+                const borderColor = cfg.borderColor || '#dee2e6';
+                const headerBg = cfg.headerBg || '#f1f3f5';
+                const headerTextWeight = cfg.headerTextWeight || '600';
+                const bandEvenBg = cfg.bandEvenBg || '#fafbfc';
+                const firstColumnBold = cfg.firstColumnBold !== false;
+                const firstColumnBg = cfg.firstColumnBg || '';
+                const cellPadding = cfg.cellPadding || '8px 12px';
+                
+                const tables = root.querySelectorAll('table');
+                tables.forEach((table) => {
+                  // Table base styles
+                  const tableStyle = table.getAttribute('style') || '';
+                  table.setAttribute('style', 'border-collapse: collapse; border-spacing: 0; width: 100%; border: 1px solid ' + borderColor + '; ' + tableStyle);
+                  
+                  // Borders and padding on all cells
+                  const cells = table.querySelectorAll('th, td');
+                  cells.forEach((cell) => {
+                    const style = cell.getAttribute('style') || '';
+                    cell.setAttribute('style', 'border: 1px solid ' + borderColor + '; padding: ' + cellPadding + '; text-align: left; vertical-align: top; ' + style);
+                  });
+                  
+                  // Header row styling
+                  const thead = table.querySelector('thead');
+                  if (thead) {
+                    thead.querySelectorAll('th, td').forEach((cell) => {
+                      const style = cell.getAttribute('style') || '';
+                      cell.setAttribute('style', 'background: ' + headerBg + '; font-weight: ' + headerTextWeight + '; ' + style);
+                    });
+                  } else {
+                    const firstRow = table.querySelector('tr');
+                    if (firstRow) {
+                      firstRow.querySelectorAll('th, td').forEach((cell) => {
+                        const style = cell.getAttribute('style') || '';
+                        cell.setAttribute('style', 'background: ' + headerBg + '; font-weight: ' + headerTextWeight + '; ' + style);
+                      });
+                    }
+                  }
+                  
+                  // Banded rows and first-column emphasis (tbody only)
+                  const bodyRows = table.querySelectorAll('tbody tr');
+                  bodyRows.forEach((row, idx) => {
+                    // Even row banding (1-based even, so 0-based odd index)
+                    if ((idx % 2) === 1) {
+                      const rowStyle = row.getAttribute('style') || '';
+                      row.setAttribute('style', 'background: ' + bandEvenBg + '; ' + rowStyle);
+                    }
+                    // First column styling
+                    const firstCell = row.querySelector('th, td');
+                    if (firstCell) {
+                      const style = firstCell.getAttribute('style') || '';
+                      const extraBg = firstColumnBg ? ('background: ' + firstColumnBg + ';') : '';
+                      const fw = firstColumnBold ? 'font-weight: 600;' : '';
+                      firstCell.setAttribute('style', fw + ' ' + extraBg + ' ' + style);
+                    }
+                  });
+                });
+              };
 
               // First, get computed styles from the actual DOM elements before cloning
               const originalElements = docContentDiv.querySelectorAll('*');
@@ -806,6 +978,9 @@ app.get('/', (req, res) => {
                   el.setAttribute('style', 'font-family: ' + computed.fontFamily + ' !important; font-size: ' + computed.fontSize + ' !important; font-weight: ' + computed.fontWeight + '; ' + cleanedStyle);
                 }
               });
+
+              // Now, apply table styling for Word
+              try { applyWordTableStyling(tempContent, tableWordStyling || {}); } catch (_) {}
 
               htmlContent += tempContent.innerHTML;
 
@@ -898,7 +1073,7 @@ function updateMarkdown() {
     const afterFrontmatter = stripFrontmatter(content);
     const headerCleaned = stripInlineMetadataBeforeTitle(afterFrontmatter, meta);
     const html = marked(headerCleaned);
-    io.emit('markdown-update', { html, title, meta });
+    io.emit('markdown-update', { html, title, meta, theme });
   } catch (error) {
     const errorMsg = `❌ Error reading file: ${error.message}`;
     console.error(errorMsg);
