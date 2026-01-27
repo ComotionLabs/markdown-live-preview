@@ -72,8 +72,8 @@ const absolutePath = path.resolve(markdownFile);
 
 console.log(`\n✨ Starting Markdown Live Preview...\n`);
 console.log(`📄 File: ${absolutePath}`);
-console.log(`🌐 Port: ${port}`);
-console.log(`🔗 URL: http://localhost:${port}\n`);
+console.log(`🌐 Requested port: ${port}`);
+console.log(`🔗 URL will open automatically after the server starts (may differ if ${port} is in use)\n`);
 console.log(`Press Ctrl+C to stop\n`);
 
 // Start the server with environment variables

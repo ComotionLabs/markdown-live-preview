@@ -1064,6 +1064,25 @@ app.get('/', (req, res) => {
               // Now, apply table styling for Word
               try { applyWordTableStyling(tempContent, tableWordStyling || {}); } catch (_) {}
 
+              // Fix anchor links to be relative for Word (internal document links)
+              const fixAnchorLinks = (root) => {
+                const links = root.querySelectorAll('a[href]');
+                links.forEach((link) => {
+                  const href = link.getAttribute('href');
+                  if (href && href.startsWith('#')) {
+                    // Already a relative anchor link, keep it as-is
+                    link.setAttribute('href', href);
+                  } else if (href && (href.includes('localhost') || href.includes('127.0.0.1'))) {
+                    // Extract anchor from absolute localhost URL
+                    const anchorMatch = href.match(/#(.+)$/);
+                    if (anchorMatch) {
+                      link.setAttribute('href', '#' + anchorMatch[1]);
+                    }
+                  }
+                });
+              };
+              try { fixAnchorLinks(tempContent); } catch (_) {}
+
               htmlContent += tempContent.innerHTML;
 
               // Create a wrapper with styles and embedded CSS for better Word compatibility
@@ -1208,12 +1227,20 @@ function listenWithFallback(startPort, maxAttempts = 10) {
     let attempt = 0;
     const tryListen = (port) => {
       CURRENT_PORT = port;
-      server.listen(port, () => resolve(port));
+      // Clean previous listeners to avoid multiple resolves
+      server.removeAllListeners('listening');
+      server.removeAllListeners('error');
+      server.once('listening', () => {
+        const actual = (server.address && server.address().port) || port;
+        resolve(actual);
+      });
       server.once('error', (err) => {
         if (err && (err.code === 'EADDRINUSE' || err.code === 'EACCES')) {
           attempt += 1;
+          const nextPort = startPort + attempt;
+          console.warn(`⚠️  Port ${port} unavailable (${err.code}). Trying ${nextPort}...`);
           if (attempt < maxAttempts) {
-            tryListen(startPort + attempt);
+            tryListen(nextPort);
           } else {
             reject(new Error(`Unable to bind to ports ${startPort}..${startPort + attempt - 1} (${err.code})`));
           }
@@ -1221,6 +1248,7 @@ function listenWithFallback(startPort, maxAttempts = 10) {
           reject(err);
         }
       });
+      server.listen(port);
     };
     tryListen(startPort);
   });
