@@ -7,17 +7,41 @@ const { Server } = require('socket.io');
 const http = require('http');
 const { exec } = require('child_process');
 
-// Configure marked to suppress deprecation warnings
+// Helper function to generate anchor IDs from heading text
+// Matches common formats like "1. Purpose and Scope" -> "1-purpose-and-scope"
+function generateAnchorId(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+}
+
+// Configure marked with custom renderer for anchor links
+const renderer = new marked.Renderer();
+
+// Override heading renderer to add IDs
+renderer.heading = function(text, level, raw) {
+  const id = generateAnchorId(raw);
+  return `<h${level} id="${id}">${text}</h${level}>`;
+};
+
 marked.setOptions({
   mangle: false,
-  headerIds: false
+  // Disable built-in headerIds to avoid deprecation warnings; we add IDs via custom renderer
+  headerIds: false,
+  renderer: renderer
 });
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
+// Port management: requested vs actual bound port
+let REQUESTED_PORT = Number(process.env.PORT) || 3000;
+let CURRENT_PORT = REQUESTED_PORT;
 const MARKDOWN_FILE = process.env.MARKDOWN_FILE;
 const THEME = process.env.THEME;
 
@@ -465,7 +489,7 @@ app.get('/export/pdf', async (req, res) => {
     }
     const browser = await puppeteer.launch({ headless: 'new' });
     const page = await browser.newPage();
-    const url = `http://localhost:${PORT}/?pdf=1`;
+    const url = `http://localhost:${CURRENT_PORT}/?pdf=1`;
     await page.goto(url, { waitUntil: 'networkidle0' });
     
     // Set viewport for consistent rendering
@@ -670,6 +694,27 @@ app.get('/', (req, res) => {
             background: #f6f8fa;
         }
         ${getNumberingCss(theme)}
+        /* Smooth scrolling for anchor links */
+        html {
+            scroll-behavior: smooth;
+        }
+        /* Ensure headings with IDs are scrollable targets */
+        #doc-content h1[id],
+        #doc-content h2[id],
+        #doc-content h3[id],
+        #doc-content h4[id],
+        #doc-content h5[id],
+        #doc-content h6[id] {
+            scroll-margin-top: 20px;
+        }
+        /* Style anchor links */
+        #doc-content a[href^="#"] {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        #doc-content a[href^="#"]:hover {
+            text-decoration: underline;
+        }
         @media print {
             @page { margin: ${theme.printMargins.top} ${theme.printMargins.right} ${theme.printMargins.bottom} ${theme.printMargins.left}; }
             .header { display: none !important; }
@@ -723,6 +768,7 @@ app.get('/', (req, res) => {
         const initialTheme = ${JSON.stringify((() => {
           try { return theme || {}; } catch (_) { return {}; }
         })())};
+        let currentTheme = initialTheme;
         if (params.get('pdf') === '1') {
           document.body.classList.add('pdf-mode');
         }
@@ -746,6 +792,7 @@ app.get('/', (req, res) => {
                 // Apply dynamic theme overrides if present
                 if (remoteTheme && typeof remoteTheme === 'object') {
                   applyDynamicTheme(remoteTheme);
+                  currentTheme = remoteTheme;
                 }
             }
             errorDiv.style.display = 'none';
@@ -888,6 +935,38 @@ app.get('/', (req, res) => {
               const tempContent = document.createElement('div');
               tempContent.innerHTML = docContentDiv.innerHTML;
 
+              // Add heading numbering for Word (Word ignores CSS counters)
+              const addWordHeadingNumbering = (root, themeCfg) => {
+                const cfg = themeCfg || {};
+                const enabled = (cfg.copyWordHeadingNumbering !== false) && (cfg.headingNumbering !== false);
+                if (!enabled) return;
+                const maxLevel = Number.isInteger(cfg.headingNumberingMaxLevel) ? cfg.headingNumberingMaxLevel : 3;
+                const counters = [0,0,0,0,0,0,0]; // indices 1..6
+                // Remove existing numbering spans to avoid duplication
+                root.querySelectorAll('span[data-word-numbering]').forEach((n) => n.remove());
+                // Number headings in document order
+                const headings = root.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                headings.forEach((h) => {
+                  const level = parseInt(h.tagName.substring(1), 10);
+                  if (!Number.isInteger(level) || level < 1 || level > 6) return;
+                  if (level > maxLevel) return;
+                  // Increment current level; reset deeper levels
+                  counters[level] += 1;
+                  for (let i = level + 1; i <= 6; i++) counters[i] = 0;
+                  // Build numbering text like "1.2.3 "
+                  const parts = [];
+                  for (let i = 1; i <= level; i++) {
+                    if (counters[i] > 0) parts.push(String(counters[i]));
+                  }
+                  if (parts.length === 0) return;
+                  const numText = parts.join('.') + ' ';
+                  const span = document.createElement('span');
+                  span.setAttribute('data-word-numbering', '1');
+                  span.textContent = numText;
+                  h.insertBefore(span, h.firstChild);
+                });
+              };
+
               // Apply Word-friendly table styling inline if enabled by theme
               const applyWordTableStyling = (root, cfg) => {
                 if (!cfg || cfg.enabled === false) return;
@@ -978,6 +1057,9 @@ app.get('/', (req, res) => {
                   el.setAttribute('style', 'font-family: ' + computed.fontFamily + ' !important; font-size: ' + computed.fontSize + ' !important; font-weight: ' + computed.fontWeight + '; ' + cleanedStyle);
                 }
               });
+
+              // Apply heading numbering for Word after applying fonts
+              try { addWordHeadingNumbering(tempContent, currentTheme || {}); } catch (_) {}
 
               // Now, apply table styling for Word
               try { applyWordTableStyling(tempContent, tableWordStyling || {}); } catch (_) {}
@@ -1120,16 +1202,47 @@ function openBrowser(url) {
   });
 }
 
-server.listen(PORT, () => {
-  const url = `http://localhost:${PORT}`;
-  console.log(`Server running at ${url}`);
-  console.log(`Watching ${MARKDOWN_FILE} for changes...`);
+// Attempt to bind the server, trying subsequent ports if in use
+function listenWithFallback(startPort, maxAttempts = 10) {
+  return new Promise((resolve, reject) => {
+    let attempt = 0;
+    const tryListen = (port) => {
+      CURRENT_PORT = port;
+      server.listen(port, () => resolve(port));
+      server.once('error', (err) => {
+        if (err && (err.code === 'EADDRINUSE' || err.code === 'EACCES')) {
+          attempt += 1;
+          if (attempt < maxAttempts) {
+            tryListen(startPort + attempt);
+          } else {
+            reject(new Error(`Unable to bind to ports ${startPort}..${startPort + attempt - 1} (${err.code})`));
+          }
+        } else {
+          reject(err);
+        }
+      });
+    };
+    tryListen(startPort);
+  });
+}
 
-  // Initial load
-  updateMarkdown();
+(async () => {
+  try {
+    const boundPort = await listenWithFallback(REQUESTED_PORT, 10);
+    CURRENT_PORT = boundPort;
+    const url = `http://localhost:${boundPort}`;
+    console.log(`Server running at ${url}`);
+    console.log(`Watching ${MARKDOWN_FILE} for changes...`);
 
-  // Auto-open browser if AUTO_OPEN is not explicitly set to false
-  if (process.env.AUTO_OPEN !== 'false') {
-    setTimeout(() => openBrowser(url), 1000);
+    // Initial load
+    updateMarkdown();
+
+    // Auto-open browser if AUTO_OPEN is not explicitly set to false
+    if (process.env.AUTO_OPEN !== 'false') {
+      setTimeout(() => openBrowser(url), 1000);
+    }
+  } catch (e) {
+    console.error('❌ Failed to start server:', e && e.message ? e.message : e);
+    process.exit(1);
   }
-});
+})();
