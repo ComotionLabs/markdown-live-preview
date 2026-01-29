@@ -1,0 +1,47 @@
+{
+  "name": "seedanalytics",
+  "companyName": "Seed Analytics",
+  "fontFamily": "'Plus Jakarta Sans', 'Sora', Arial, -apple-system, BlinkMacSystemFont, sans-serif",
+  "headerFooterFontFamily": "'Plus Jakarta Sans', 'Sora', Arial, -apple-system, sans-serif",
+  "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,500;0,700;1,300;1,500&family=Sora:wght@400&display=swap",
+  "logoSrc": "/themes/seedanalytics/assets/seed-analytics-logo-svg-colour.svg",
+  "logoAlt": "Seed Analytics",
+  "titleFontSize": "28px",
+  "h1FontSize": "22px",
+  "h2FontSize": "18px",
+  "h3FontSize": "16px",
+  "bodyFontSize": "14px",
+  "lineHeight": "1.7",
+  "bodyColor": "#051F4C",
+  "headingColor": "#051F4C",
+  "linkColor": "#051F4C",
+  "headerFooterColor": "#051F4C",
+  "headingNumbering": true,
+  "headingNumberingMaxLevel": 3,
+  "printFooterEnabled": true,
+  "printFooterLabel": "Page",
+  "printMargins": {
+    "top": "22mm",
+    "right": "18mm",
+    "bottom": "22mm",
+    "left": "18mm"
+  },
+  "printContentBottomPadding": "18mm",
+  "headerFooterFontSize": "0.9em",
+  "sensitivityLevels": {
+    "Public": { "bg": "#E6E6E6", "fg": "#051F4C" },
+    "Internal": { "bg": "#E6E6E6", "fg": "#051F4C" },
+    "Confidential": { "bg": "#E6E6E6", "fg": "#051F4C" },
+    "Restricted": { "bg": "#E6E6E6", "fg": "#051F4C" }
+  },
+  "tableWordStyling": {
+    "enabled": true,
+    "borderColor": "#D3CFC7",
+    "headerBg": "#E6E6E6",
+    "headerTextWeight": "600",
+    "bandEvenBg": "#F5F4F2",
+    "firstColumnBold": true,
+    "firstColumnBg": "",
+    "cellPadding": "8px 12px"
+  }
+}

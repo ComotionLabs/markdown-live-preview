@@ -56,8 +56,11 @@ function loadTheme(themeName) {
       logoAlt: '',
       titleFontSize: '32px',
       h1FontSize: '21px',
+      h1FontWeight: '700',
       h2FontSize: '18px',
+      h2FontWeight: '400',
       h3FontSize: '16px',
+      h3FontWeight: '400',
       bodyFontSize: '14px',
       lineHeight: '1.6',
       companyName: '',
@@ -100,8 +103,11 @@ function loadTheme(themeName) {
         logoAlt: manifest.logoAlt || '',
         titleFontSize: manifest.titleFontSize || '32px',
         h1FontSize: manifest.h1FontSize || '21px',
+        h1FontWeight: manifest.h1FontWeight || '700',
         h2FontSize: manifest.h2FontSize || '18px',
+        h2FontWeight: manifest.h2FontWeight || '400',
         h3FontSize: manifest.h3FontSize || '16px',
+        h3FontWeight: manifest.h3FontWeight || '400',
         bodyFontSize: manifest.bodyFontSize || '14px',
         lineHeight: manifest.lineHeight || '1.6',
         companyName: manifest.companyName || '',
@@ -113,6 +119,11 @@ function loadTheme(themeName) {
         printContentBottomPadding: manifest.printContentBottomPadding || '16mm',
         headerFooterFontFamily: manifest.headerFooterFontFamily || (manifest.fontFamily || "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif"),
         headerFooterFontSize: manifest.headerFooterFontSize || '0.9em',
+        googleFontsUrl: manifest.googleFontsUrl || '',
+        bodyColor: manifest.bodyColor || '',
+        headingColor: manifest.headingColor || '',
+        linkColor: manifest.linkColor || '',
+        headerFooterColor: manifest.headerFooterColor || '',
         sensitivityLevels: manifest.sensitivityLevels || {
           Public: { bg: '#e7f5ff', fg: '#0b7285' },
           Internal: { bg: '#f1f3f5', fg: '#343a40' },
@@ -142,8 +153,11 @@ function loadTheme(themeName) {
         logoAlt: "Comotion",
         titleFontSize: "36px",
         h1FontSize: "20px",
+        h1FontWeight: "700",
         h2FontSize: "18px",
+        h2FontWeight: "500",
         h3FontSize: "16px",
+        h3FontWeight: "500",
         bodyFontSize: "14px",
         lineHeight: "1.7",
         companyName: "Comotion Business Solutions",
@@ -180,8 +194,11 @@ function loadTheme(themeName) {
     logoAlt: '',
     titleFontSize: '32px',
     h1FontSize: '21px',
+    h1FontWeight: '700',
     h2FontSize: '18px',
+    h2FontWeight: '400',
     h3FontSize: '16px',
+    h3FontWeight: '400',
     bodyFontSize: '14px',
     lineHeight: '1.6',
     companyName: '',
@@ -396,7 +413,7 @@ function buildPuppeteerFooterTemplate(theme) {
         </style>
       </head>
       <body>
-        <div style="font-size: ${absoluteFontSize}; font-family: ${theme.headerFooterFontFamily}; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; color: #6c757d;">
+        <div style="font-size: ${absoluteFontSize}; font-family: ${theme.headerFooterFontFamily}; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; color: ${theme.headerFooterColor || '#6c757d'};">
           <div style="text-align: left;">${companyName}</div>
           <div style="text-align: right;">${label} <span class="pageNumber"></span> of <span class="totalPages"></span></div>
         </div>
@@ -407,15 +424,16 @@ function buildPuppeteerFooterTemplate(theme) {
 function buildPuppeteerHeaderTemplate(theme, meta, title) {
   const hasSensitivity = !!(meta && meta.sensitivity);
   const level = hasSensitivity ? String(meta.sensitivity).trim() : '';
-  const colors = hasSensitivity ? (theme.sensitivityLevels[level] || { bg: '#f1f3f5', fg: '#343a40' }) : { bg: 'transparent', fg: '#6c757d' };
+  const colors = hasSensitivity ? (theme.sensitivityLevels[level] || { bg: '#f1f3f5', fg: '#343a40' }) : { bg: 'transparent', fg: theme.headerFooterColor || '#6c757d' };
   const safeTitle = (title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const headerColor = theme.headerFooterColor || '#495057';
   
   // Convert em to px if needed
   const fontSize = theme.headerFooterFontSize || '10px';
   const absoluteFontSize = fontSize.includes('em') ? '10px' : fontSize;
   
   const badge = hasSensitivity ? `<span style="display: inline-block; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: ${colors.bg}; color: ${colors.fg}; -webkit-print-color-adjust: exact;">${level}</span>` : '';
-  const titleSpan = safeTitle ? `<span style="color: #495057; margin-left: 8px;">${safeTitle}</span>` : '';
+  const titleSpan = safeTitle ? `<span style="color: ${headerColor}; margin-left: 8px;">${safeTitle}</span>` : '';
   
   // Always return a complete HTML structure
   return `
@@ -426,7 +444,7 @@ function buildPuppeteerHeaderTemplate(theme, meta, title) {
         </style>
       </head>
       <body>
-        <div style="font-size: ${absoluteFontSize}; font-family: ${theme.headerFooterFontFamily}; width: 100%; padding-left: 20px; color: #495057;">
+        <div style="font-size: ${absoluteFontSize}; font-family: ${theme.headerFooterFontFamily}; width: 100%; padding-left: 20px; color: ${headerColor};">
           ${badge}${titleSpan}
         </div>
       </body>
@@ -623,6 +641,7 @@ app.get('/', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Markdown Live Preview</title>
+    ${theme.googleFontsUrl ? `<link href="${theme.googleFontsUrl}" rel="stylesheet">` : ''}
     <style>
         body {
             font-family: ${theme.fontFamily};
@@ -631,6 +650,7 @@ app.get('/', (req, res) => {
             margin: 0 auto;
             padding: 20px;
             line-height: ${theme.lineHeight};
+            ${theme.bodyColor ? `color: ${theme.bodyColor};` : ''}
         }
         .header {
             background: #f8f9fa;
@@ -650,11 +670,11 @@ app.get('/', (req, res) => {
         .content { padding: 0; border: none; background: transparent; }
         .doc-theme-brand { display: ${theme.logoSrc ? 'block' : 'none'}; margin: 16px 0; }
         .doc-theme-logo { height: 44px; }
-        .doc-title { font-family: ${theme.fontFamily}; font-size: ${theme.titleFontSize}; font-weight: 700; margin: 8px 0 16px; }
-        #doc-content h1 { font-family: ${theme.fontFamily}; font-size: ${theme.h1FontSize}; }
-        #doc-content h2 { font-family: ${theme.fontFamily}; font-size: ${theme.h2FontSize}; }
-        #doc-content h3 { font-family: ${theme.fontFamily}; font-size: ${theme.h3FontSize}; }
-        #doc-content { border: 1px solid #e9ecef; border-radius: 5px; padding: 20px; background: white; }
+        .doc-title { font-family: ${theme.fontFamily}; font-size: ${theme.titleFontSize}; font-weight: 700; margin: 8px 0 16px; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
+        #doc-content h1 { font-family: ${theme.fontFamily}; font-size: ${theme.h1FontSize}; font-weight: ${theme.h1FontWeight || '700'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
+        #doc-content h2 { font-family: ${theme.fontFamily}; font-size: ${theme.h2FontSize}; font-weight: ${theme.h2FontWeight || '400'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
+        #doc-content h3 { font-family: ${theme.fontFamily}; font-size: ${theme.h3FontSize}; font-weight: ${theme.h3FontWeight || '400'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
+        #doc-content { border: 1px solid #e9ecef; border-radius: 5px; padding: 20px; background: white; ${theme.bodyColor ? `color: ${theme.bodyColor};` : ''} }
         .sensitivity-badge { display: none; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 999px; width: fit-content; }
         /* Sensitivity level colors from theme */
         ${Object.entries(theme.sensitivityLevels).map(([level, colors]) => {
@@ -669,7 +689,7 @@ app.get('/', (req, res) => {
             border-radius: 5px;
             margin-bottom: 20px;
         }
-        /* Professional table styling */
+        /* Professional table styling (theme-driven when available) */
         #doc-content table {
             width: 100%;
             border-collapse: collapse;
@@ -678,17 +698,17 @@ app.get('/', (req, res) => {
         }
         #doc-content th,
         #doc-content td {
-            border: 1px solid #dee2e6;
-            padding: 8px 12px;
+            border: 1px solid ${(theme.tableWordStyling && theme.tableWordStyling.borderColor) ? theme.tableWordStyling.borderColor : '#dee2e6'};
+            padding: ${(theme.tableWordStyling && theme.tableWordStyling.cellPadding) ? theme.tableWordStyling.cellPadding : '8px 12px'};
             text-align: left;
             vertical-align: top;
         }
         #doc-content thead th {
-            background: #f1f3f5;
-            font-weight: 600;
+            background: ${(theme.tableWordStyling && theme.tableWordStyling.headerBg) ? theme.tableWordStyling.headerBg : '#f1f3f5'};
+            font-weight: ${(theme.tableWordStyling && theme.tableWordStyling.headerTextWeight) ? theme.tableWordStyling.headerTextWeight : '600'};
         }
         #doc-content tbody tr:nth-child(even) {
-            background: #fafbfc;
+            background: ${(theme.tableWordStyling && theme.tableWordStyling.bandEvenBg) ? theme.tableWordStyling.bandEvenBg : '#fafbfc'};
         }
         #doc-content tbody tr:hover {
             background: #f6f8fa;
@@ -709,10 +729,17 @@ app.get('/', (req, res) => {
         }
         /* Style anchor links */
         #doc-content a[href^="#"] {
-            color: #0066cc;
+            color: ${theme.linkColor || '#0066cc'};
             text-decoration: none;
         }
         #doc-content a[href^="#"]:hover {
+            text-decoration: underline;
+        }
+        #doc-content a:not([href^="#"]) {
+            color: ${theme.linkColor || '#0066cc'};
+            text-decoration: none;
+        }
+        #doc-content a:not([href^="#"]):hover {
             text-decoration: underline;
         }
         @media print {
@@ -828,9 +855,9 @@ app.get('/', (req, res) => {
           return [
             'body { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.bodyFontSize || '14px') + '; line-height: ' + (t.lineHeight || '1.6') + '; }',
             '.doc-title { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.titleFontSize || '32px') + '; font-weight: 700; }',
-            '#doc-content h1 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h1FontSize || '21px') + '; }',
-            '#doc-content h2 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h2FontSize || '18px') + '; }',
-            '#doc-content h3 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h3FontSize || '16px') + '; }'
+            '#doc-content h1 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h1FontSize || '21px') + '; font-weight: ' + (t.h1FontWeight || '700') + '; }',
+            '#doc-content h2 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h2FontSize || '18px') + '; font-weight: ' + (t.h2FontWeight || '400') + '; }',
+            '#doc-content h3 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h3FontSize || '16px') + '; font-weight: ' + (t.h3FontWeight || '400') + '; }'
           ].join('\\n');
         }
         function applyDynamicTheme(t) {
