@@ -1286,14 +1286,21 @@ function listenWithFallback(startPort, maxAttempts = 10) {
     const boundPort = await listenWithFallback(REQUESTED_PORT, 10);
     CURRENT_PORT = boundPort;
     const url = `http://localhost:${boundPort}`;
+    if (process.env.PORT_FILE) {
+      try {
+        fs.writeFileSync(process.env.PORT_FILE, String(boundPort), 'utf8');
+      } catch (e) {
+        console.warn('Could not write PORT_FILE:', e.message);
+      }
+    }
     console.log(`Server running at ${url}`);
     console.log(`Watching ${MARKDOWN_FILE} for changes...`);
 
     // Initial load
     updateMarkdown();
 
-    // Auto-open browser if AUTO_OPEN is not explicitly set to false
-    if (process.env.AUTO_OPEN !== 'false') {
+    // Auto-open browser if AUTO_OPEN is not explicitly set to false (skip when PORT_FILE set, e.g. MCP headless)
+    if (process.env.AUTO_OPEN !== 'false' && !process.env.PORT_FILE) {
       setTimeout(() => openBrowser(url), 1000);
     }
   } catch (e) {
