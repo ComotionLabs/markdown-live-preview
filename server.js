@@ -46,7 +46,9 @@ const MARKDOWN_FILE = process.env.MARKDOWN_FILE;
 const THEME = process.env.THEME;
 
 // Serve theme assets
-app.use('/themes', express.static(path.join(__dirname, 'themes')));
+// Themes: single source of truth from claude_skills/md-document/themes (plan Part E)
+const THEMES_DIR = path.join(__dirname, 'claude_skills', 'md-document', 'themes');
+app.use('/themes', express.static(THEMES_DIR));
 
 function loadTheme(themeName) {
   if (!themeName) {
@@ -92,15 +94,22 @@ function loadTheme(themeName) {
     };
   }
   try {
-    const manifestPath = path.join(__dirname, 'themes', themeName, 'theme.json');
+    const manifestPath = path.join(THEMES_DIR, themeName, 'theme.json');
     if (fs.existsSync(manifestPath)) {
       const manifestRaw = fs.readFileSync(manifestPath, 'utf8');
       const manifest = JSON.parse(manifestRaw);
       const tw = manifest.tableWordStyling || {};
+      // Resolve relative logo paths for browser (e.g. comotion-ai uses "comotion-ai-logo-svg.svg")
+      let logoSrc = manifest.logoSrc || '';
+      if (logoSrc && !logoSrc.startsWith('/')) {
+        const base = '/themes/' + themeName + '/';
+        logoSrc = logoSrc.startsWith('assets/') ? base + logoSrc : base + 'assets/' + logoSrc;
+      }
       return {
         fontFamily: manifest.fontFamily || "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
-        logoSrc: manifest.logoSrc || '',
+        logoSrc,
         logoAlt: manifest.logoAlt || '',
+        logoCopyToWordHeight: manifest.logoCopyToWordHeight || '22px',
         titleFontSize: manifest.titleFontSize || '32px',
         h1FontSize: manifest.h1FontSize || '21px',
         h1FontWeight: manifest.h1FontWeight || '700',
@@ -144,7 +153,7 @@ function loadTheme(themeName) {
     }
   } catch (e) {
     console.warn(`Theme load failed for '${themeName}': ${e.message}`);
-    // Fallback: if 'comotion' theme is requested but cannot be read (e.g., macOS Documents permissions),
+    // Fallback: if a known theme is requested but cannot be read (e.g., macOS Documents permissions),
     // return a built-in copy so the preview keeps working.
     if (themeName === 'comotion') {
       return {
@@ -181,6 +190,53 @@ function loadTheme(themeName) {
           headerBg: "#f1f3f5",
           headerTextWeight: "600",
           bandEvenBg: "#fafbfc",
+          firstColumnBold: true,
+          firstColumnBg: "",
+          cellPadding: "8px 12px"
+        }
+      };
+    }
+    if (themeName === 'comotion-ai') {
+      return {
+        fontFamily: "'Inter', 'Roboto', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        logoSrc: "/themes/comotion-ai/assets/comotion-ai-logo-svg.svg",
+        logoAlt: "comotion.ai",
+        logoCopyToWordHeight: "16px",
+        titleFontSize: "36px",
+        h1FontSize: "21px",
+        h1FontWeight: "700",
+        h2FontSize: "18px",
+        h2FontWeight: "600",
+        h3FontSize: "16px",
+        h3FontWeight: "600",
+        bodyFontSize: "14px",
+        lineHeight: "1.7",
+        companyName: "comotion.ai",
+        headingNumbering: true,
+        headingNumberingMaxLevel: 3,
+        printFooterEnabled: true,
+        printFooterLabel: "Page",
+        printMargins: { top: "22mm", right: "18mm", bottom: "22mm", left: "18mm" },
+        printContentBottomPadding: "18mm",
+        headerFooterFontFamily: "'Inter', 'Roboto', Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        headerFooterFontSize: "0.9em",
+        googleFontsUrl: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
+        bodyColor: "#2D3748",
+        headingColor: "#1A3B66",
+        linkColor: "#4DBFED",
+        headerFooterColor: "#1A3B66",
+        sensitivityLevels: {
+          Public: { bg: "#EDF2F7", fg: "#1A3B66" },
+          Internal: { bg: "#E2E8F0", fg: "#1A3B66" },
+          Confidential: { bg: "#1A3B66", fg: "#FFFFFF" },
+          Restricted: { bg: "#D61B5E", fg: "#FFFFFF" }
+        },
+        tableWordStyling: {
+          enabled: true,
+          borderColor: "#CBD5E0",
+          headerBg: "#1A3B66",
+          headerTextWeight: "600",
+          bandEvenBg: "#F7FAFC",
           firstColumnBold: true,
           firstColumnBg: "",
           cellPadding: "8px 12px"
@@ -940,7 +996,8 @@ app.get('/', (req, res) => {
               if (logoElement && logoElement.src && logoElement.offsetParent !== null) {
                 try {
                   const base64Logo = await imageToBase64(logoElement);
-                  htmlContent += '<div style="margin-bottom: 16px;"><img src="' + base64Logo + '" style="height: 22px; display: block;" alt="Logo" /></div>';
+                  const logoHeight = (currentTheme && currentTheme.logoCopyToWordHeight) ? currentTheme.logoCopyToWordHeight : '22px';
+                  htmlContent += '<div style="margin-bottom: 16px;"><img src="' + base64Logo + '" style="height: ' + logoHeight + '; display: block;" alt="Logo" /></div>';
                 } catch (err) {
                   console.warn('Logo conversion failed:', err);
                   // Skip logo if conversion fails rather than using potentially broken URL

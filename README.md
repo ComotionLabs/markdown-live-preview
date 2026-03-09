@@ -21,6 +21,7 @@ Without an efficient preview mechanism, teams often experience a frustrating cyc
 - File watching with automatic change detection
 - Copy to Word functionality with formatting preserved
 - PDF export with headers and footers
+- **Claude skill** for branded PDF, Word (HTML), and .docx export: [claude_skills/md-document/](claude_skills/md-document/) (themes, script, tests)
 - Clean, responsive UI
 - Error handling and connection status indicators
 

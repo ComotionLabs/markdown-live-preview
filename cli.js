@@ -37,6 +37,7 @@ if (cleanArgs.length === 0 || cleanArgs[0] === '--help' || cleanArgs[0] === '-h'
 
   Examples:
     md-preview README.md --theme comotion
+    md-preview README.md --theme comotion-ai
     md-preview docs/guide.md 8080 --theme comotion
     npm run preview README.md
     npx markdown-live-preview README.md
