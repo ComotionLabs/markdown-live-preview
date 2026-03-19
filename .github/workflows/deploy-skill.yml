@@ -1,15 +1,23 @@
 # Build the Claude skill and publish it as an artifact.
-# - On release: build the skill and attach the .skill file to the release.
-#   GitHub only allows adding assets to draft releases, so create a DRAFT release
-#   first; this workflow runs, uploads the asset, then you can publish the release.
-# - Manual run: build the skill and upload as a workflow artifact (download from run Summary).
+#
+# Recommended: tag push (no race with "Publish")
+#   GitHub cannot lock draft releases — anyone can publish before CI finishes.
+#   Instead: push an annotated tag, e.g. git tag v1.2.0 && git push origin v1.2.0
+#   This workflow builds first, then creates a PUBLISHED release with the .skill
+#   attached in one step, so there is no draft for someone to publish early.
+#
+# Manual run: build only; download md-document.skill from the run Summary (Artifacts).
 
 name: Deploy skill
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-and-publish:
@@ -27,17 +35,12 @@ jobs:
           name: md-document.skill
           path: claude_skills/build/md-document.skill
 
-      - name: Fail if release is already published
-        if: github.event_name == 'release' && github.event.release.draft == false
-        run: |
-          echo "::error::Cannot upload assets to an already-published release. Create the release as a DRAFT first, run this workflow, then publish the release."
-          exit 1
-
-      - name: Upload skill to Release
-        if: github.event_name == 'release' && github.event.release.draft == true
+      - name: Create release with skill asset
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.release.tag_name }}
+          tag_name: ${{ github.ref_name }}
           files: claude_skills/build/md-document.skill
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

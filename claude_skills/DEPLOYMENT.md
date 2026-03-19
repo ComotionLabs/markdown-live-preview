@@ -45,11 +45,17 @@ Deployment builds the skill and publishes it as a Git artifact so others can dow
 
 The workflow **`.github/workflows/deploy-skill.yml`** runs when:
 
-1. **A release is published**  
-   The skill is built and the `.skill` file is **attached to that release** as a downloadable asset. To deploy:
-   - Create a new release (e.g. from the GitHub Releases page or via a tag).
-   - Publish the release; the workflow runs, builds `md-document.skill`, and uploads it to the release.
-   - Users download `md-document.skill` from the release assets.
+1. **A version tag is pushed** (recommended, e.g. `v1.2.0`)  
+   The skill is built, then GitHub Actions **creates a published release** for that tag and attaches `md-document.skill` in one step. There is no draft phase, so no one can click “Publish” before the build finishes (GitHub does not support locking draft releases).
+
+   To deploy:
+
+   ```bash
+   git tag v1.2.0
+   git push origin v1.2.0
+   ```
+
+   Users download `md-document.skill` from the release assets.
 
 2. **Manual run (workflow_dispatch)**  
    You can run the workflow from the Actions tab without creating a release. The workflow builds the skill and publishes it as a **workflow artifact**. Download the `.skill` file from the run’s Summary page (Artifacts section).
