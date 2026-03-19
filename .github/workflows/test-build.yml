@@ -40,3 +40,18 @@ jobs:
       - name: Run md-document tests
         working-directory: claude_skills/md-document
         run: pytest tests/ -v
+
+      - name: Build theme example PDFs (all themes × document & presentation)
+        run: ./scripts/build-theme-examples.sh
+
+      - name: Verify theme example artifacts
+        run: |
+          for f in \
+            build/examples/comotion-document.pdf \
+            build/examples/comotion-presentation.pdf \
+            build/examples/comotion-ai-document.pdf \
+            build/examples/comotion-ai-presentation.pdf \
+            build/examples/seedanalytics-document.pdf \
+            build/examples/seedanalytics-presentation.pdf; do
+            test -s "$f" || { echo "missing or empty: $f"; exit 1; }
+          done

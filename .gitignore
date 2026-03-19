@@ -63,3 +63,6 @@ Thumbs.db
 
 # Claude skill build output
 claude_skills/build/
+
+# Generated theme example PDFs (npm run build / build:examples)
+/build/
