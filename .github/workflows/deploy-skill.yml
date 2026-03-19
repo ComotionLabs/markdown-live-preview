@@ -1,12 +1,14 @@
 # Build the Claude skill and publish it as an artifact.
 # - On release: build the skill and attach the .skill file to the release.
+#   GitHub only allows adding assets to draft releases, so create a DRAFT release
+#   first; this workflow runs, uploads the asset, then you can publish the release.
 # - Manual run: build the skill and upload as a workflow artifact (download from run Summary).
 
 name: Deploy skill
 
 on:
   release:
-    types: [published]
+    types: [created]
   workflow_dispatch:
 
 jobs:
@@ -25,8 +27,14 @@ jobs:
           name: md-document.skill
           path: claude_skills/build/md-document.skill
 
+      - name: Fail if release is already published
+        if: github.event_name == 'release' && github.event.release.draft == false
+        run: |
+          echo "::error::Cannot upload assets to an already-published release. Create the release as a DRAFT first, run this workflow, then publish the release."
+          exit 1
+
       - name: Upload skill to Release
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' && github.event.release.draft == true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
