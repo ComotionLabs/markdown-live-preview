@@ -17,10 +17,38 @@ Use these as templates when creating slide decks with the md-document skill. Eac
 | `comotion-ai-sales-presentation-with-notes.md` | comotion-ai | **Sales deck with speaker notes** — use `--narrative` when generating PDF so the `>` blockquotes appear in a right-hand panel. Shows layout directives and narrative panel. |
 | `comotion-workshop-kickoff-example.md` | comotion | **Workshop kickoff** — agenda table, ground rules, section dividers |
 | `seedanalytics-board-update-example.md` | seedanalytics | **Board/executive update** — confidential sensitivity, metrics table, risks, and “ask” section |
+| `seedanalytics-proposal-presentation-example.md` | seedanalytics | **Client proposal** — engagement scope, workstreams table, approach, next steps |
+| `seedanalytics-roadmap-with-notes-example.md` | seedanalytics | **Roadmap with speaker notes** — use `--narrative`; quarterly roadmap, tables, narrative panel |
+
+### Seed Analytics document examples
+
+| File | Use case |
+|------|----------|
+| `seedanalytics-document-example.md` | **Analytics maturity assessment** (document) — framework, scores table, recommendations |
+| `seedanalytics-document-report-example.md` | **Data quality report** (document) — monthly memo, quality metrics table, actions and recommendations |
+
+### Templates (four sets)
+
+Canonical templates — one per brand, plus a group overview:
+
+| Template | Document | Presentation |
+|----------|----------|--------------|
+| **comotion** | `comotion-document-template.md` | `comotion-presentation-template.md` |
+| **comotion-ai** | `comotion-ai-document-template.md` | `comotion-ai-presentation-template.md` |
+| **seedanalytics** | `seedanalytics-document-template.md` | `seedanalytics-presentation-template.md` |
+| **comotion group** | `comotion-group-document-template.md` | `comotion-group-presentation-template.md` |
+
+The **comotion group** template includes all three brands (Comotion Business Solutions, comotion.ai, Seed Analytics) in one document or presentation; use it as a theme reference or group overview. Pre-built PDF examples: `comotion-group-document-example.pdf`, `comotion-group-presentation-example.pdf`.
+
+### Reference
+
+| File | Use case |
+|------|----------|
+| `example-presentation-seedanalytics.md` | **Single cover slide** — aligns with `Presentation1.pptx` (Operational Overview, "Private and Confidential" footer) |
 
 ## Features demonstrated
 
-- **Speaker notes:** In `comotion-ai-sales-presentation-with-notes.md`, lines starting with `>` are speaker notes. Generate with `--narrative` for the narrative panel.
+- **Speaker notes:** In `comotion-ai-sales-presentation-with-notes.md` and `seedanalytics-roadmap-with-notes-example.md`, lines starting with `>` are speaker notes. Generate with `--narrative` for the narrative panel.
 - **Section dividers:** `<!-- layout: divider -->` before a slide title gives a centred section-break slide.
 - **Tables:** Standard markdown tables render in slides.
 - **Themes:** comotion, seedanalytics, comotion-ai — each has its own fonts, colours, and assets.

@@ -329,6 +329,19 @@ Features:
 - Inline metadata lines are removed from the rendered content
 - Empty lines following metadata are also removed for cleaner output
 
+#### Templates
+
+The `templates/` folder has four template sets (document + presentation each):
+
+| Template | Description |
+|----------|-------------|
+| **comotion** | Comotion Business Solutions — `comotion-document-template.md`, `comotion-presentation-template.md` |
+| **comotion-ai** | comotion.ai — `comotion-ai-document-template.md`, `comotion-ai-presentation-template.md` |
+| **seedanalytics** | Seed Analytics — `seedanalytics-document-template.md`, `seedanalytics-presentation-template.md` |
+| **comotion group** | All three brands in one — `comotion-group-document-template.md`, `comotion-group-presentation-template.md` |
+
+Preview with e.g. `md-preview templates/comotion-document-template.md --theme comotion`. Themes are loaded from `claude_skills/md-document/themes/` (comotion, comotion-ai, seedanalytics).
+
 ## Project Structure
 
 ```
@@ -337,6 +350,8 @@ markdown-live-preview/
    cli.js              # CLI wrapper for npm/npx support
    preview.sh          # macOS/Linux launcher script
    preview.bat         # Windows launcher script
+   templates/          # Comotion brand overview and theme reference
+   claude_skills/md-document/  # Skill: themes, scripts, examples
    package.json        # Project dependencies and scripts
    LICENSE             # MIT License
    README.md           # This file

@@ -1,6 +1,6 @@
 ---
 name: md-document
-description: "Use this skill whenever creating, editing, or formatting Markdown (.md) files intended for professional output — including reports, memos, proposals, briefs, guides, SOWs, policies, OR presentation decks / slide decks. Supports two modes: 'document' (multi-page report layout) and 'presentation' (full-bleed 16:9 slide deck). This skill CAN generate Word-openable output: use --format word to produce an .html file that opens in Microsoft Word (no pandoc required). It can also produce PDF (default) or native .docx (requires pandoc). ALWAYS trigger this skill when the user asks for a document or presentation to be created, or for a 'Word document', 'Word file', or 'HTML for Word' — even without an explicit format request — and when the user mentions themes (comotion, comotion-ai, seedanalytics), sensitivity levels (public, internal, confidential, secret). This skill creates the .md file AND generates branded, themed PDF, Word (HTML), or .docx. Do NOT use for code files, READMEs, or casual markdown snippets that won't be rendered as documents."
+description: "Use when creating or editing Markdown for professional output: reports, memos, proposals, briefs, guides, SOWs, policies, or presentation decks. Modes: document (multi-page) and presentation (16:9 slides). Output: PDF (default), Word (.html via --format word, opens in Word), or .docx (--format docx, requires pandoc). Trigger for document/presentation requests, 'Word document' or 'HTML for Word', and when themes (comotion, comotion-ai, seedanalytics) or sensitivity (public, internal, confidential, secret) are mentioned. Creates .md and generates branded PDF/Word/.docx. Do not use for code, READMEs, or casual snippets."
 ---
 
 # Markdown Document & Presentation Skill
@@ -42,7 +42,7 @@ mode: document
 | Theme | Company | Style |
 |-------|---------|-------|
 | `comotion` | Comotion Business Solutions | Roboto, navy #1A3B66, colour logo, gradient fallback bg |
-| `seedanalytics` | Seed Analytics | Plus Jakarta Sans / Sora, navy #051F4C, gradient fallback bg |
+| `seedanalytics` | Seed Analytics | Plus Jakarta Sans / Sora, navy #051F4C, gradient fallback bg; presentation footer "Private and Confidential" (confidential), colour #B5AFA2; aligns with `examples/Presentation1.pptx` |
 | `comotion-ai` | comotion.ai | Inter, navy #1A3B66, dark photo backgrounds, gradient accents |
 
 ### sensitivity
@@ -287,6 +287,21 @@ python3 /mnt/skills/user/md-document/scripts/md_to_pdf.py \
 Mode is read from frontmatter `mode:` automatically. Override with `--mode presentation` if needed.
 
 **Dependencies:** `markdown` and `weasyprint` (PDF); **pandoc** for `--format docx`. Python deps auto-installed if missing.
+
+---
+
+## Templates (four sets)
+
+In `examples/` there are four template sets. Each has a document and a presentation; use the one that matches the requested brand.
+
+| Template | Use for |
+|----------|---------|
+| **comotion** | Comotion Business Solutions — `comotion-document-template.md`, `comotion-presentation-template.md` |
+| **comotion-ai** | comotion.ai — `comotion-ai-document-template.md`, `comotion-ai-presentation-template.md` |
+| **seedanalytics** | Seed Analytics — `seedanalytics-document-template.md`, `seedanalytics-presentation-template.md` |
+| **comotion group** | All three brands in one doc/deck — `comotion-group-document-template.md`, `comotion-group-presentation-template.md` |
+
+When the user asks for a "Comotion group" or "all brands" overview, use the **comotion group** templates. For a single-brand deliverable, use the matching template set.
 
 ---
 

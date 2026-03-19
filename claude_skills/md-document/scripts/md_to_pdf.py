@@ -108,6 +108,18 @@ def find_logo(name, prefer_white=False, td=None, theme=None):
             return asset_b64(os.path.join(assets, f))
     return None
 
+def rewrite_theme_img_src(html, td=None):
+    """Replace img src='/themes/theme-name/...' with data URI so PDF/WeasyPrint can resolve them."""
+    if not html or "/themes/" not in html:
+        return html
+    base = themes_dir(td)
+    def repl(m):
+        theme_name, rest = m.group(1), m.group(2)
+        path = os.path.join(base, theme_name, rest)
+        uri = asset_b64(path)
+        return f'src="{uri}"' if uri else m.group(0)
+    return re.sub(r'src="/themes/([^/]+)/([^"]+)"', repl, html)
+
 def find_backgrounds(name, td=None):
     """Return list of base64 URIs for PNG/JPG background images."""
     assets = os.path.join(themes_dir(td), name, "assets")
@@ -172,6 +184,7 @@ def strip_escapes(text):
 def build_document_html(title, body_html, theme_name, sensitivity, td=None, word_friendly=False):
     """Build document HTML. If word_friendly=True, omit @page/running headers and heading
     counters so Word can apply its native header numbering (theme defines headingNumbering)."""
+    body_html = rewrite_theme_img_src(body_html, td)
     t   = load_theme(theme_name, td)
     logo_uri = find_logo(theme_name, prefer_white=False, td=td, theme=t)
     sbg, sfg = sens_colors(t, sensitivity)
@@ -355,9 +368,21 @@ def build_presentation_html(content, theme_name, sensitivity, with_narrative=Fal
     accent2    = t.get("accentSecondary", "#4DBFED")
     accent3    = t.get("accentTertiary",  "#D61B5E")
     company    = t.get("companyName", "")
+    sens_labels = t.get("sensitivityLabels", {})
+    sens_label  = sens_labels.get(sensitivity.capitalize(), sensitivity.upper())
+    footer_text_color = t.get("presentationFooterTextColor")
+    default_light_bg = t.get("presentationDefaultBackground") == "light"
+    footer_bg = t.get("presentationFooterBackground")
+    heading_font = t.get("presentationHeadingFontFamily", font)
+    heading_weight = t.get("presentationHeadingFontWeight", "700")
+    subheading_weight = t.get("presentationSubheadingFontWeight", "700")
+    body_font = t.get("presentationBodyFontFamily", font)
+    body_weight = t.get("presentationBodyFontWeight", "400")
 
-    logo_uri   = find_logo(theme_name, prefer_white=True, td=td)
-    logo_html  = f'<img class="logo" src="{logo_uri}">' if logo_uri else f'<span style="color:rgba(255,255,255,0.6);font-size:9pt;">{company}</span>'
+    logo_uri_dark  = find_logo(theme_name, prefer_white=True, td=td)
+    logo_uri_light = find_logo(theme_name, prefer_white=False, td=td)
+    logo_html_dark  = f'<img class="logo" src="{logo_uri_dark}">' if logo_uri_dark else f'<span style="color:rgba(255,255,255,0.6);font-size:9pt;">{company}</span>'
+    logo_html_light = f'<img class="logo" src="{logo_uri_light}">' if logo_uri_light else f'<span style="color:{hc};font-size:9pt;">{company}</span>'
 
     backgrounds = find_backgrounds(theme_name, td=td)
     has_images  = len(backgrounds) > 0
@@ -374,7 +399,12 @@ def build_presentation_html(content, theme_name, sensitivity, with_narrative=Fal
     slide_bgs = []
     for i, slide_text in enumerate(slides):
         smeta, _ = parse_slide_meta(slide_text)
+        layout_hint = smeta.get("layout", "cover" if i == 0 else "content")
         bg_dir   = smeta.get("bg", "auto")
+        if default_light_bg and layout_hint not in ("cover", "divider"):
+            bg_dir = "light"
+        elif default_light_bg and layout_hint in ("cover", "divider"):
+            bg_dir = "color"
 
         if bg_dir == "light":
             bg_css = "background: #FFFFFF;"
@@ -416,6 +446,13 @@ body {{ font-family: {font}; }}
     display: flex; flex-direction: column;
     position: relative;
 }}
+.slide-white-body {{
+    width: 297mm; height: 167mm;
+    background: #FFFFFF;
+    display: flex; flex-direction: column;
+    position: relative;
+    border-left: 2.5mm solid {hc};
+}}
 
 /* Main content area */
 .slide-body-area {{
@@ -429,7 +466,7 @@ body {{ font-family: {font}; }}
 /* Footer bar */
 .slide-footer {{
     height: 9mm;
-    background: rgba(0,0,0,0.40);
+    background: {footer_bg if footer_bg else 'rgba(0,0,0,0.40)'};
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -446,6 +483,11 @@ body {{ font-family: {font}; }}
     flex-shrink: 0;
 }}
 .logo {{ max-height: 5.5mm; }}
+.slide-footer-right {{
+    display: flex; align-items: center; gap: 3mm;
+    flex-shrink: 0; white-space: nowrap;
+}}
+.pagenum {{ font-size: 8pt; color: rgba(255,255,255,0.35); white-space: nowrap; }}
 
 /* Sensitivity badge — muted */
 .sens {{
@@ -455,8 +497,14 @@ body {{ font-family: {font}; }}
     color: rgba(255,255,255,0.55);
     border: 0.3mm solid rgba(255,255,255,0.20);
 }}
-.pagenum {{ font-size: 8pt; color: rgba(255,255,255,0.35); }}
-
+""" + (f"""
+.slide-white-body .slide-footer {{
+    border-top: 0.3mm solid {accent3};
+}}
+.slide-white-body .slide-footer .sens,
+.slide-white-body .slide-footer .pagenum {{ color: {footer_text_color}; }}
+.slide-white-body .slide-footer .sens {{ background: none; border: none; padding: 0; }}
+""" if footer_text_color else "") + """
 /* Narrative panel */
 .narrative-panel {{
     position: absolute;
@@ -479,15 +527,18 @@ body {{ font-family: {font}; }}
 
 /* Dark slide typography */
 .cover-title {{
-    color: white; font-size: 44pt; font-weight: 700;
+    color: white; font-size: 44pt;
+    font-family: {heading_font}; font-weight: {heading_weight};
     line-height: 1.12; margin-bottom: 4mm;
 }}
 .slide-title {{
-    color: white; font-size: 30pt; font-weight: 700;
+    color: white; font-size: 30pt;
+    font-family: {heading_font}; font-weight: {subheading_weight};
     line-height: 1.2; margin-bottom: 3mm;
 }}
 .divider-title {{
-    color: white; font-size: 38pt; font-weight: 700;
+    color: white; font-size: 38pt;
+    font-family: {heading_font}; font-weight: {heading_weight};
     line-height: 1.15; text-align: center;
 }}
 .rule {{
@@ -516,22 +567,56 @@ body {{ font-family: {font}; }}
     margin: 4mm 0; color: rgba(255,255,255,0.75); font-style:italic;
 }}
 .subtitle {{
-    color: rgba(255,255,255,0.65); font-size: 16pt;
-    margin-top: 2mm; font-weight: 300;
+    color: {accent1}; font-size: 16pt;
+    font-family: {body_font}; font-weight: {body_weight};
+    margin-top: 2mm;
 }}
 
-/* Light slide typography */
+/* Light slide typography (white background) */
+.cover-title-light {{
+    color: {hc}; font-size: 44pt;
+    font-family: {heading_font}; font-weight: {heading_weight};
+    line-height: 1.12; margin-bottom: 4mm;
+}}
+.subtitle-light {{
+    color: {accent2}; font-size: 16pt;
+    font-family: {body_font}; font-weight: {body_weight};
+    margin-top: 2mm;
+}}
+.divider-title-light {{
+    color: {hc}; font-size: 38pt;
+    font-family: {heading_font}; font-weight: {heading_weight};
+    line-height: 1.15; text-align: center;
+}}
 .slide-title-light {{
-    color: {hc}; font-size: 30pt; font-weight: 700;
-    line-height: 1.2; margin-bottom: 3mm;
+    color: {hc}; font-size: 30pt;
+    font-family: {heading_font}; font-weight: {subheading_weight};
+    line-height: 1.2; margin-bottom: 1mm;
+    padding-bottom: 3mm;
+    border-bottom: 1.2mm solid {accent1};
 }}
 .body-text-light {{
     color: {hc}; font-size: 16pt; line-height: 1.7;
+    font-family: {body_font}; font-weight: {body_weight};
+    margin-top: 4mm;
 }}
 .body-text-light p {{ margin-bottom: 3mm; }}
 .body-text-light ul, .body-text-light ol {{ margin-left: 6mm; }}
 .body-text-light li {{ margin-bottom: 3.5mm; }}
-.body-text-light strong {{ color: {accent3}; font-weight: 600; }}
+.body-text-light li::marker {{ color: {accent1}; }}
+.body-text-light strong {{ color: {accent2}; font-weight: 600; }}
+.body-text-light table {{ width:100%; border-collapse:collapse; font-size:13pt; margin-top:2mm; }}
+.body-text-light th {{ padding:3mm 4mm; text-align:left; color:white;
+                       background:{hc}; font-weight:500;
+                       font-family:{heading_font}; }}
+.body-text-light tr:nth-child(even) td {{ background: #F5F4F2; }}
+.body-text-light td {{ padding:2.5mm 4mm; color:{hc};
+                       border-bottom:0.3mm solid {accent3}; }}
+.body-text-light td:first-child {{ font-weight:600; }}
+.body-text-light blockquote {{
+    border-left: 2mm solid {accent1}; padding: 3mm 6mm;
+    margin: 4mm 0; color: {accent2}; font-style:italic;
+}}
 """
 
     # ── Render each slide ─────────────────────────────────────────────────────
@@ -553,10 +638,19 @@ body {{ font-family: {font}; }}
         text_clean = "\n".join(content_lines)
 
         title, body_html = slide_title_and_body(text_clean)
+        body_html = rewrite_theme_img_src(body_html, td)
 
-        is_light = (bg_dir == "light")
-        slide_cls = "slide-light" if is_light else "slide"
-        footer_cls = "slide-footer-light" if is_light else "slide-footer"
+        body_light = (bg_dir == "light")
+        if default_light_bg and layout not in ("cover", "divider"):
+            slide_cls = "slide slide-white-body"
+            footer_cls = "slide-footer"
+            body_light = True
+        elif body_light:
+            slide_cls = "slide-light"
+            footer_cls = "slide-footer-light"
+        else:
+            slide_cls = "slide"
+            footer_cls = "slide-footer"
         pr = narr_pad if (with_narrative and narrative_text) else "16mm"
 
         # Narrative panel
@@ -567,11 +661,11 @@ body {{ font-family: {font}; }}
                 <div class="narrative-text">{narrative_text}</div>
             </div>"""
 
-        # Footer
-        sens_label = sensitivity.upper()
+        # Footer — pick logo variant based on slide background
+        slide_logo = logo_html_light if body_light else logo_html_dark
         footer = f"""<div class="{footer_cls}">
-            {logo_html}
-            <div style="display:flex;align-items:center;gap:3mm;">
+            {slide_logo}
+            <div class="slide-footer-right">
                 <span class="sens">{sens_label}</span>
                 <span class="pagenum">{i+1} / {total}</span>
             </div>
@@ -579,21 +673,34 @@ body {{ font-family: {font}; }}
 
         # Layout variants
         if layout == "cover":
-            body_area = f"""<div class="slide-body-area" style="justify-content:center;padding-left:20mm;padding-right:{pr};">
-                <div class="rule cover-rule"></div>
-                <div class="cover-title">{title}</div>
-                <div class="subtitle">{body_html}</div>
-            </div>"""
+            if body_light:
+                body_area = f"""<div class="slide-body-area" style="justify-content:center;padding-left:20mm;padding-right:{pr};">
+                    <div class="rule cover-rule"></div>
+                    <div class="cover-title-light">{title}</div>
+                    <div class="subtitle-light">{body_html}</div>
+                </div>"""
+            else:
+                body_area = f"""<div class="slide-body-area" style="justify-content:center;padding-left:20mm;padding-right:{pr};">
+                    <div class="rule cover-rule"></div>
+                    <div class="cover-title">{title}</div>
+                    <div class="subtitle">{body_html}</div>
+                </div>"""
         elif layout == "divider":
-            body_area = f"""<div class="slide-body-area" style="align-items:center;text-align:center;padding-right:{pr};">
-                <div class="rule" style="margin:0 auto 5mm auto;width:20mm;"></div>
-                <div class="divider-title">{title}</div>
-                <div class="subtitle" style="text-align:center;margin-top:4mm;">{body_html}</div>
-            </div>"""
-        elif is_light:
+            if body_light:
+                body_area = f"""<div class="slide-body-area" style="align-items:center;text-align:center;padding-right:{pr};">
+                    <div class="rule" style="margin:0 auto 5mm auto;width:20mm;"></div>
+                    <div class="divider-title-light">{title}</div>
+                    <div class="subtitle-light" style="text-align:center;margin-top:4mm;">{body_html}</div>
+                </div>"""
+            else:
+                body_area = f"""<div class="slide-body-area" style="align-items:center;text-align:center;padding-right:{pr};">
+                    <div class="rule" style="margin:0 auto 5mm auto;width:20mm;"></div>
+                    <div class="divider-title">{title}</div>
+                    <div class="subtitle" style="text-align:center;margin-top:4mm;">{body_html}</div>
+                </div>"""
+        elif body_light:
             body_area = f"""<div class="slide-body-area" style="padding-right:{pr};">
                 <div class="slide-title-light">{title}</div>
-                <div class="rule"></div>
                 <div class="body-text-light">{body_html}</div>
             </div>"""
         else:
@@ -636,9 +743,6 @@ def convert(md_path, output_path=None, mode_override=None, with_narrative=False,
     word_friendly = output_format in ("word", "docx")
 
     if mode == "presentation":
-        # Strip global title if present — first slide is the cover
-        if content.strip().startswith("# "):
-            _, content = extract_title(content)
         content = strip_escapes(content)
         html = build_presentation_html(content, theme_name, sensitivity,
                                        with_narrative=with_narrative, td=td)

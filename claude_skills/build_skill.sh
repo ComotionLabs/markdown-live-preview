@@ -15,6 +15,8 @@ if [[ ! -d "$SKILL_DIR" ]]; then
   exit 1
 fi
 
+"${SCRIPT_DIR}/check_skill_conformance.sh" "$SKILL_NAME" || exit 1
+
 mkdir -p "$BUILD_DIR"
 
 cd "$SKILL_DIR"

@@ -81,16 +81,21 @@ function loadTheme(themeName) {
         Restricted: { bg: '#ffe3e3', fg: '#c92a2a' }
       },
       // Controls how tables are styled when copying to Word
-      tableWordStyling: {
-        enabled: true,
-        borderColor: '#dee2e6',
-        headerBg: '#f1f3f5',
-        headerTextWeight: '600',
-        bandEvenBg: '#fafbfc',
-        firstColumnBold: true,
-        firstColumnBg: '',
-        cellPadding: '8px 12px'
-      }
+        tableWordStyling: {
+          enabled: true,
+          borderColor: '#dee2e6',
+          headerBg: '#f1f3f5',
+          headerFg: '',
+          headerTextWeight: '600',
+          bandEvenBg: '#fafbfc',
+          firstColumnBold: true,
+          firstColumnBg: '',
+          cellPadding: '8px 12px'
+        },
+        coverStyle: '',
+        accentColor: '',
+        accentSecondary: '',
+        accentTertiary: ''
     };
   }
   try {
@@ -99,6 +104,7 @@ function loadTheme(themeName) {
       const manifestRaw = fs.readFileSync(manifestPath, 'utf8');
       const manifest = JSON.parse(manifestRaw);
       const tw = manifest.tableWordStyling || {};
+      const headingColor = manifest.headingColor || '';
       // Resolve relative logo paths for browser (e.g. comotion-ai uses "comotion-ai-logo-svg.svg")
       let logoSrc = manifest.logoSrc || '';
       if (logoSrc && !logoSrc.startsWith('/')) {
@@ -133,6 +139,10 @@ function loadTheme(themeName) {
         headingColor: manifest.headingColor || '',
         linkColor: manifest.linkColor || '',
         headerFooterColor: manifest.headerFooterColor || '',
+        coverStyle: manifest.coverStyle || '',
+        accentColor: manifest.accentColor || '',
+        accentSecondary: manifest.accentSecondary || '',
+        accentTertiary: manifest.accentTertiary || '',
         sensitivityLevels: manifest.sensitivityLevels || {
           Public: { bg: '#e7f5ff', fg: '#0b7285' },
           Internal: { bg: '#f1f3f5', fg: '#343a40' },
@@ -143,6 +153,7 @@ function loadTheme(themeName) {
           enabled: tw.enabled !== false,
           borderColor: tw.borderColor || '#dee2e6',
           headerBg: tw.headerBg || '#f1f3f5',
+          headerFg: tw.headerFg || headingColor || '',
           headerTextWeight: String(tw.headerTextWeight || '600'),
           bandEvenBg: tw.bandEvenBg || '#fafbfc',
           firstColumnBold: tw.firstColumnBold !== false,
@@ -170,6 +181,15 @@ function loadTheme(themeName) {
         bodyFontSize: "14px",
         lineHeight: "1.7",
         companyName: "Comotion Business Solutions",
+        coverStyle: "",
+        accentColor: "#8CC240",
+        accentSecondary: "#4DBFED",
+        accentTertiary: "#D61C5E",
+        bodyColor: "#1A3B66",
+        headingColor: "#1A3B66",
+        linkColor: "#1A3B66",
+        headerFooterColor: "#1A3B66",
+        googleFontsUrl: "https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400;1,500&display=swap",
         headingNumbering: true,
         headingNumberingMaxLevel: 3,
         printFooterEnabled: true,
@@ -186,10 +206,11 @@ function loadTheme(themeName) {
         },
         tableWordStyling: {
           enabled: true,
-          borderColor: "#dee2e6",
-          headerBg: "#f1f3f5",
-          headerTextWeight: "600",
-          bandEvenBg: "#fafbfc",
+          borderColor: "#B4B4B4",
+          headerBg: "#F0F0F0",
+          headerFg: "#1A3B66",
+          headerTextWeight: "700",
+          bandEvenBg: "#FAFAFA",
           firstColumnBold: true,
           firstColumnBg: "",
           cellPadding: "8px 12px"
@@ -225,6 +246,10 @@ function loadTheme(themeName) {
         headingColor: "#1A3B66",
         linkColor: "#4DBFED",
         headerFooterColor: "#1A3B66",
+        coverStyle: "gradient",
+        accentColor: "#8CC240",
+        accentSecondary: "#4DBFED",
+        accentTertiary: "#D61B5E",
         sensitivityLevels: {
           Public: { bg: "#EDF2F7", fg: "#1A3B66" },
           Internal: { bg: "#E2E8F0", fg: "#1A3B66" },
@@ -235,8 +260,57 @@ function loadTheme(themeName) {
           enabled: true,
           borderColor: "#CBD5E0",
           headerBg: "#1A3B66",
+          headerFg: "#FFFFFF",
           headerTextWeight: "600",
           bandEvenBg: "#F7FAFC",
+          firstColumnBold: true,
+          firstColumnBg: "",
+          cellPadding: "8px 12px"
+        }
+      };
+    }
+    if (themeName === 'seedanalytics') {
+      return {
+        fontFamily: "'Plus Jakarta Sans', 'Sora', Arial, -apple-system, BlinkMacSystemFont, sans-serif",
+        logoSrc: "/themes/seedanalytics/assets/seed-analytics-logo-svg-colour.svg",
+        logoAlt: "Seed Analytics",
+        titleFontSize: "28px",
+        h1FontSize: "22px",
+        h2FontSize: "18px",
+        h3FontSize: "16px",
+        bodyFontSize: "14px",
+        lineHeight: "1.7",
+        companyName: "Seed Analytics",
+        headingNumbering: true,
+        headingNumberingMaxLevel: 3,
+        printFooterEnabled: true,
+        printFooterLabel: "Page",
+        printMargins: { top: "22mm", right: "18mm", bottom: "22mm", left: "18mm" },
+        printContentBottomPadding: "18mm",
+        headerFooterFontFamily: "'Plus Jakarta Sans', 'Sora', Arial, -apple-system, sans-serif",
+        headerFooterFontSize: "0.9em",
+        googleFontsUrl: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,500;0,700;1,300;1,500&family=Sora:wght@400&display=swap",
+        bodyColor: "#051F4C",
+        headingColor: "#051F4C",
+        linkColor: "#051F4C",
+        headerFooterColor: "#051F4C",
+        coverStyle: "",
+        accentColor: "#B5AFA2",
+        accentSecondary: "#88837A",
+        accentTertiary: "#D3CFC7",
+        sensitivityLevels: {
+          Public: { bg: "#E6E6E6", fg: "#051F4C" },
+          Internal: { bg: "#E6E6E6", fg: "#051F4C" },
+          Confidential: { bg: "#E6E6E6", fg: "#051F4C" },
+          Restricted: { bg: "#E6E6E6", fg: "#051F4C" }
+        },
+        tableWordStyling: {
+          enabled: true,
+          borderColor: "#D3CFC7",
+          headerBg: "#E6E6E6",
+          headerFg: "#051F4C",
+          headerTextWeight: "600",
+          bandEvenBg: "#F5F4F2",
           firstColumnBold: true,
           firstColumnBg: "",
           cellPadding: "8px 12px"
@@ -258,6 +332,10 @@ function loadTheme(themeName) {
     bodyFontSize: '14px',
     lineHeight: '1.6',
     companyName: '',
+    coverStyle: '',
+    accentColor: '',
+    accentSecondary: '',
+    accentTertiary: '',
     headingNumbering: false,
     headingNumberingMaxLevel: 3,
     printFooterEnabled: true,
@@ -276,6 +354,7 @@ function loadTheme(themeName) {
       enabled: true,
       borderColor: '#dee2e6',
       headerBg: '#f1f3f5',
+      headerFg: '',
       headerTextWeight: '600',
       bandEvenBg: '#fafbfc',
       firstColumnBold: true,
@@ -285,18 +364,72 @@ function loadTheme(themeName) {
   };
 }
 
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function resolveSensitivityColors(theme, rawLevel) {
+  if (!rawLevel || !theme || !theme.sensitivityLevels) {
+    return { bg: '#f1f3f5', fg: '#343a40', key: '' };
+  }
+  const level = String(rawLevel).trim();
+  const keys = Object.keys(theme.sensitivityLevels);
+  const found = keys.find((k) => k.toLowerCase() === level.toLowerCase());
+  if (found) {
+    const c = theme.sensitivityLevels[found];
+    return { bg: c.bg, fg: c.fg, key: found };
+  }
+  return { bg: '#f1f3f5', fg: '#343a40', key: '' };
+}
+
+function buildDocumentLayoutCss(theme) {
+  const hc = theme.headingColor || '#333';
+  const a1 = theme.accentColor || hc;
+  const a2 = theme.accentSecondary || '';
+  const a3 = theme.accentTertiary || hc;
+  const hf = theme.headerFooterFontFamily || theme.fontFamily;
+  const hfs = theme.headerFooterFontSize || '0.9em';
+  const hfc = theme.headerFooterColor || hc;
+  if (theme.coverStyle === 'gradient' && a2) {
+    const grad = `linear-gradient(90deg,${hc},${a2},${a3})`;
+    return `
+        .doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-family: ${hf}; font-size: ${hfs}; color: ${hfc}; }
+        .doc-cover { margin-bottom: 24px; padding-bottom: 14px; overflow: hidden; border-bottom: 4px solid ${a2}; border-image: ${grad} 1; }
+        .doc-cover .doc-theme-brand { margin: 0; }
+        .title-rule { background: ${grad}; height: 3px; border-radius: 2px; margin-bottom: 24px; }
+        #doc-content h1 { border-bottom: 2px solid ${a2}; padding-bottom: 4px; margin-top: 26px; }
+        #doc-content h2 { border-left: 3px solid ${a1}; padding-left: 10px; }
+        #doc-content h3 { border-left: 2px solid ${a3}; padding-left: 8px; }
+    `;
+  }
+  return `
+        .doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-family: ${hf}; font-size: ${hfs}; color: ${hfc}; }
+        .doc-cover { margin-bottom: 24px; padding-bottom: 14px; overflow: hidden; border-bottom: 3px solid ${hc}; }
+        .doc-cover .doc-theme-brand { margin: 0; }
+        .title-rule { background: ${hc}; height: 2px; opacity: 0.25; margin-bottom: 24px; }
+        #doc-content h1 { border-bottom: 1.5px solid ${hc}; padding-bottom: 4px; margin-top: 26px; }
+  `;
+}
+
 let theme = loadTheme(THEME);  // Default theme from environment variable
 
 function getNumberingCss(theme) {
   if (!theme.headingNumbering) return '';
-  // Number h1..h3 by default
+  const numColor =
+    theme.coverStyle === 'gradient' && theme.accentSecondary
+      ? theme.accentSecondary
+      : theme.headingColor || 'inherit';
   return `
         #doc-content { counter-reset: h1; }
         #doc-content h1 { counter-reset: h2; }
-        #doc-content h1::before { counter-increment: h1; content: counter(h1) '. '; }
+        #doc-content h1::before { counter-increment: h1; content: counter(h1) '. '; color: ${numColor}; }
         #doc-content h2 { counter-reset: h3; }
-        #doc-content h2::before { counter-increment: h2; content: counter(h1) '.' counter(h2) ' '; }
-        #doc-content h3::before { counter-increment: h3; content: counter(h1) '.' counter(h2) '.' counter(h3) ' '; }
+        #doc-content h2::before { counter-increment: h2; content: counter(h1) '.' counter(h2) ' '; color: ${numColor}; }
+        #doc-content h3::before { counter-increment: h3; content: counter(h1) '.' counter(h2) '.' counter(h3) ' '; color: ${numColor}; }
   `;
 }
 
@@ -480,7 +613,10 @@ function buildPuppeteerFooterTemplate(theme) {
 function buildPuppeteerHeaderTemplate(theme, meta, title) {
   const hasSensitivity = !!(meta && meta.sensitivity);
   const level = hasSensitivity ? String(meta.sensitivity).trim() : '';
-  const colors = hasSensitivity ? (theme.sensitivityLevels[level] || { bg: '#f1f3f5', fg: '#343a40' }) : { bg: 'transparent', fg: theme.headerFooterColor || '#6c757d' };
+  const sensResolved = hasSensitivity ? resolveSensitivityColors(theme, level) : null;
+  const colors = hasSensitivity
+    ? { bg: sensResolved.bg, fg: sensResolved.fg }
+    : { bg: 'transparent', fg: theme.headerFooterColor || '#6c757d' };
   const safeTitle = (title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const headerColor = theme.headerFooterColor || '#495057';
   
@@ -488,7 +624,9 @@ function buildPuppeteerHeaderTemplate(theme, meta, title) {
   const fontSize = theme.headerFooterFontSize || '10px';
   const absoluteFontSize = fontSize.includes('em') ? '10px' : fontSize;
   
-  const badge = hasSensitivity ? `<span style="display: inline-block; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: ${colors.bg}; color: ${colors.fg}; -webkit-print-color-adjust: exact;">${level}</span>` : '';
+  const badge = hasSensitivity
+    ? `<span style="display: inline-block; font-weight: 700; padding: 3px 10px; border-radius: 3px; letter-spacing: 1px; background: ${colors.bg}; color: ${colors.fg}; -webkit-print-color-adjust: exact; print-color-adjust: exact;">${escapeHtml(level.toUpperCase())}</span>`
+    : '';
   const titleSpan = safeTitle ? `<span style="color: ${headerColor}; margin-left: 8px;">${safeTitle}</span>` : '';
   
   // Always return a complete HTML structure
@@ -724,14 +862,16 @@ app.get('/', (req, res) => {
             font-size: 12px;
         }
         .content { padding: 0; border: none; background: transparent; }
-        .doc-theme-brand { display: ${theme.logoSrc ? 'block' : 'none'}; margin: 16px 0; }
+        ${buildDocumentLayoutCss(theme)}
+        .doc-theme-brand { display: ${theme.logoSrc ? 'block' : 'none'}; }
         .doc-theme-logo { height: 44px; }
-        .doc-title { font-family: ${theme.fontFamily}; font-size: ${theme.titleFontSize}; font-weight: 700; margin: 8px 0 16px; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
+        .doc-title { font-family: ${theme.fontFamily}; font-size: ${theme.titleFontSize}; font-weight: 700; margin: 24px 0 6px; line-height: 1.2; clear: both; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
         #doc-content h1 { font-family: ${theme.fontFamily}; font-size: ${theme.h1FontSize}; font-weight: ${theme.h1FontWeight || '700'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
         #doc-content h2 { font-family: ${theme.fontFamily}; font-size: ${theme.h2FontSize}; font-weight: ${theme.h2FontWeight || '400'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
         #doc-content h3 { font-family: ${theme.fontFamily}; font-size: ${theme.h3FontSize}; font-weight: ${theme.h3FontWeight || '400'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
         #doc-content { border: 1px solid #e9ecef; border-radius: 5px; padding: 20px; background: white; ${theme.bodyColor ? `color: ${theme.bodyColor};` : ''} }
         .sensitivity-badge { display: none; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 999px; width: fit-content; }
+        .sens-badge { font-weight: 700; padding: 3px 10px; border-radius: 3px; letter-spacing: 1px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         /* Sensitivity level colors from theme */
         ${Object.entries(theme.sensitivityLevels).map(([level, colors]) => {
           const safe = level.replace(/[^A-Za-z0-9_-]/g, '');
@@ -761,6 +901,7 @@ app.get('/', (req, res) => {
         }
         #doc-content thead th {
             background: ${(theme.tableWordStyling && theme.tableWordStyling.headerBg) ? theme.tableWordStyling.headerBg : '#f1f3f5'};
+            color: ${(theme.tableWordStyling && theme.tableWordStyling.headerFg) ? theme.tableWordStyling.headerFg : (theme.headingColor || 'inherit')};
             font-weight: ${(theme.tableWordStyling && theme.tableWordStyling.headerTextWeight) ? theme.tableWordStyling.headerTextWeight : '600'};
         }
         #doc-content tbody tr:nth-child(even) {
@@ -803,16 +944,20 @@ app.get('/', (req, res) => {
             .header { display: none !important; }
             body { margin: 0; padding: 0; }
             #doc-content { border: none; padding: 0 0 ${theme.printContentBottomPadding} 0; }
-            .doc-theme-brand { margin: 0 0 12px 0; }
+            .doc-cover { margin-bottom: 16px; }
+            .doc-theme-brand { margin: 0; }
             .doc-theme-logo { height: 40px; }
-            .doc-title { margin: 6px 0 12px; }
+            .doc-title { margin: 24px 0 6px; }
+            .doc-header { break-after: avoid; }
             /* Always hide in-page footer during browser printing; use Export PDF for accurate numbers */
             .print-footer { display: none !important; }
             /* Puppeteer uses its own header/footer; in-page footer remains hidden */
             /* Show sensitivity chip at the top of each page from page 2 */
             .header { display: none !important; }
+            .doc-cover { break-after: avoid; }
             .doc-theme-brand { break-after: avoid; }
             .doc-title { break-after: avoid; }
+            .title-rule { break-after: avoid; }
         }
     </style>
 </head>
@@ -827,10 +972,17 @@ app.get('/', (req, res) => {
     </div>
     <div id="error" class="error" style="display: none;"></div>
     <div class="content">
-        <div class="doc-theme-brand">
-            <img src="${theme.logoSrc}" alt="${theme.logoAlt || 'Logo'}" class="doc-theme-logo" />
+        <div class="doc-header" id="doc-header">
+            <span id="doc-header-company">${escapeHtml(theme.companyName || '')}</span>
+            <span id="doc-sens-badge" class="sens-badge" style="display:none;" aria-live="polite"></span>
+        </div>
+        <div class="doc-cover">
+            <div class="doc-theme-brand">
+                <img src="${theme.logoSrc}" alt="${theme.logoAlt || 'Logo'}" class="doc-theme-logo" />
+            </div>
         </div>
         <div class="doc-title" id="doc-title" style="display:none;"></div>
+        <div class="title-rule" aria-hidden="true"></div>
         <div id="doc-content">Loading...</div>
     </div>
     ${theme.printFooterEnabled ? `<div class="print-footer"><span class="footer-label">${theme.printFooterLabel} </span><span class="page-numbers"></span></div>` : ''}
@@ -840,6 +992,8 @@ app.get('/', (req, res) => {
         const socket = io();
         const docContentDiv = document.getElementById('doc-content');
         const docTitleDiv = document.getElementById('doc-title');
+        const docHeaderCompanyEl = document.getElementById('doc-header-company');
+        const docSensBadgeEl = document.getElementById('doc-sens-badge');
         const statusDiv = document.getElementById('status');
         const errorDiv = document.getElementById('error');
         const exportBtn = document.getElementById('export-pdf');
@@ -856,11 +1010,35 @@ app.get('/', (req, res) => {
           document.body.classList.add('pdf-mode');
         }
 
+        function updateDocHeader(meta, t) {
+            t = t || {};
+            if (docHeaderCompanyEl) docHeaderCompanyEl.textContent = t.companyName || '';
+            if (docSensBadgeEl) {
+                const lev = meta && meta.sensitivity ? String(meta.sensitivity).trim() : '';
+                if (lev) {
+                    const keys = Object.keys(t.sensitivityLevels || {});
+                    const found = keys.find(function (k) { return k.toLowerCase() === lev.toLowerCase(); });
+                    let col = { bg: '#f1f3f5', fg: '#343a40' };
+                    if (found && t.sensitivityLevels[found]) col = t.sensitivityLevels[found];
+                    docSensBadgeEl.textContent = lev.toUpperCase();
+                    docSensBadgeEl.style.display = 'inline-block';
+                    docSensBadgeEl.style.background = col.bg;
+                    docSensBadgeEl.style.color = col.fg;
+                } else {
+                    docSensBadgeEl.style.display = 'none';
+                    docSensBadgeEl.textContent = '';
+                    docSensBadgeEl.style.background = '';
+                    docSensBadgeEl.style.color = '';
+                }
+            }
+        }
+
         socket.on('markdown-update', (payload) => {
             if (typeof payload === 'string') {
                 docContentDiv.innerHTML = payload;
                 docTitleDiv.style.display = 'none';
                 document.title = 'Markdown Live Preview';
+                updateDocHeader({}, currentTheme);
             } else {
                 const { html, title, meta, theme: remoteTheme } = payload || {};
                 docContentDiv.innerHTML = html || '';
@@ -872,11 +1050,18 @@ app.get('/', (req, res) => {
                     docTitleDiv.style.display = 'none';
                     document.title = 'Markdown Live Preview';
                 }
-                // Apply dynamic theme overrides if present
                 if (remoteTheme && typeof remoteTheme === 'object') {
                   applyDynamicTheme(remoteTheme);
                   currentTheme = remoteTheme;
+                  const logoImg = document.querySelector('.doc-theme-logo');
+                  if (logoImg && remoteTheme.logoSrc) {
+                    logoImg.src = remoteTheme.logoSrc;
+                    logoImg.alt = remoteTheme.logoAlt || 'Logo';
+                  }
+                  const brand = document.querySelector('.doc-theme-brand');
+                  if (brand) brand.style.display = remoteTheme.logoSrc ? 'block' : 'none';
                 }
+                updateDocHeader(meta || {}, currentTheme);
             }
             errorDiv.style.display = 'none';
         });
@@ -906,14 +1091,71 @@ app.get('/', (req, res) => {
           }
           return el;
         }
+        function documentLayoutCssFromTheme(t) {
+          if (!t) return '';
+          const hc = t.headingColor || '#333';
+          const a1 = t.accentColor || hc;
+          const a2 = t.accentSecondary || '';
+          const a3 = t.accentTertiary || hc;
+          const hf = t.headerFooterFontFamily || t.fontFamily;
+          const hfs = t.headerFooterFontSize || '0.9em';
+          const hfc = t.headerFooterColor || hc;
+          if (t.coverStyle === 'gradient' && a2) {
+            const grad = 'linear-gradient(90deg,' + hc + ',' + a2 + ',' + a3 + ')';
+            return '.doc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-family:' + hf + ';font-size:' + hfs + ';color:' + hfc + ';}' +
+              '.doc-cover{margin-bottom:24px;padding-bottom:14px;overflow:hidden;border-bottom:4px solid ' + a2 + ';border-image:' + grad + ' 1;}' +
+              '.doc-cover .doc-theme-brand{margin:0;}' +
+              '.title-rule{background:' + grad + ';height:3px;border-radius:2px;margin-bottom:24px;}' +
+              '#doc-content h1{border-bottom:2px solid ' + a2 + ';padding-bottom:4px;margin-top:26px;}' +
+              '#doc-content h2{border-left:3px solid ' + a1 + ';padding-left:10px;}' +
+              '#doc-content h3{border-left:2px solid ' + a3 + ';padding-left:8px;}';
+          }
+          return '.doc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-family:' + hf + ';font-size:' + hfs + ';color:' + hfc + ';}' +
+            '.doc-cover{margin-bottom:24px;padding-bottom:14px;overflow:hidden;border-bottom:3px solid ' + hc + ';}' +
+            '.doc-cover .doc-theme-brand{margin:0;}' +
+            '.title-rule{background:' + hc + ';height:2px;opacity:0.25;margin-bottom:24px;}' +
+            '#doc-content h1{border-bottom:1.5px solid ' + hc + ';padding-bottom:4px;margin-top:26px;}';
+        }
+        function numberingCssFromTheme(t) {
+          if (!t || !t.headingNumbering) {
+            return '#doc-content h1,#doc-content h2,#doc-content h3{counter-reset:none !important;}' +
+              '#doc-content h1::before,#doc-content h2::before,#doc-content h3::before{content:none !important;counter-increment:none !important;}';
+          }
+          const numColor = (t.coverStyle === 'gradient' && t.accentSecondary) ? t.accentSecondary : (t.headingColor || 'inherit');
+          return '#doc-content{counter-reset:h1;}#doc-content h1{counter-reset:h2;}#doc-content h1::before{counter-increment:h1;content:counter(h1) \". \";color:' + numColor + ';}' +
+            '#doc-content h2{counter-reset:h3;}#doc-content h2::before{counter-increment:h2;content:counter(h1) \".\" counter(h2) \" \";color:' + numColor + ';}' +
+            '#doc-content h3::before{counter-increment:h3;content:counter(h1) \".\" counter(h2) \".\" counter(h3) \" \";color:' + numColor + ';}';
+        }
+        function tableHeaderCssFromTheme(t) {
+          if (!t || !t.tableWordStyling) return '';
+          const tw = t.tableWordStyling;
+          const fg = tw.headerFg || t.headingColor || 'inherit';
+          const bg = tw.headerBg || '#f1f3f5';
+          const fw = tw.headerTextWeight || '600';
+          return '#doc-content thead th{color:' + fg + ' !important;background:' + bg + ' !important;font-weight:' + fw + ' !important;}';
+        }
+        function linkCssFromTheme(t) {
+          if (!t || !t.linkColor) return '';
+          const c = t.linkColor;
+          return '#doc-content a[href^=\"#\"]{color:' + c + ';text-decoration:none;}#doc-content a[href^=\"#\"]:hover{text-decoration:underline;}' +
+            '#doc-content a:not([href^=\"#\"]){color:' + c + ';text-decoration:none;}#doc-content a:not([href^=\"#\"]):hover{text-decoration:underline;}';
+        }
         function buildThemeCss(t) {
           if (!t) return '';
+          const bodyCol = t.bodyColor ? 'color:' + t.bodyColor + ';' : '';
+          const titleCol = t.headingColor ? 'color:' + t.headingColor + ';' : '';
+          const h1c = t.headingColor ? 'color:' + t.headingColor + ';' : '';
           return [
-            'body { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.bodyFontSize || '14px') + '; line-height: ' + (t.lineHeight || '1.6') + '; }',
-            '.doc-title { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.titleFontSize || '32px') + '; font-weight: 700; }',
-            '#doc-content h1 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h1FontSize || '21px') + '; font-weight: ' + (t.h1FontWeight || '700') + '; }',
-            '#doc-content h2 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h2FontSize || '18px') + '; font-weight: ' + (t.h2FontWeight || '400') + '; }',
-            '#doc-content h3 { font-family: ' + (t.fontFamily || 'sans-serif') + '; font-size: ' + (t.h3FontSize || '16px') + '; font-weight: ' + (t.h3FontWeight || '400') + '; }'
+            'body{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.bodyFontSize || '14px') + ';line-height:' + (t.lineHeight || '1.6') + ';' + bodyCol + '}',
+            '#doc-content{' + bodyCol + '}',
+            '.doc-title{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.titleFontSize || '32px') + ';font-weight:700;' + titleCol + '}',
+            '#doc-content h1{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.h1FontSize || '21px') + ';font-weight:' + (t.h1FontWeight || '700') + ';' + h1c + '}',
+            '#doc-content h2{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.h2FontSize || '18px') + ';font-weight:' + (t.h2FontWeight || '400') + ';' + h1c + '}',
+            '#doc-content h3{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.h3FontSize || '16px') + ';font-weight:' + (t.h3FontWeight || '400') + ';' + h1c + '}',
+            documentLayoutCssFromTheme(t),
+            numberingCssFromTheme(t),
+            tableHeaderCssFromTheme(t),
+            linkCssFromTheme(t)
           ].join('\\n');
         }
         function applyDynamicTheme(t) {
@@ -988,8 +1230,24 @@ app.get('/', (req, res) => {
                 });
               };
 
-              // Get the complete HTML content with title and logo
+              // Get the complete HTML content with title and logo (order matches skill Word export)
               let htmlContent = '';
+              const tWord = currentTheme || {};
+              const hfWord = tWord.headerFooterFontFamily || tWord.fontFamily || themeFontFamily;
+              const hfsWord = tWord.headerFooterFontSize || '0.9em';
+              const hfcWord = tWord.headerFooterColor || tWord.headingColor || '#333';
+              function escapeWordHtml(s) {
+                return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              }
+              if (docHeaderCompanyEl && (docHeaderCompanyEl.textContent || (docSensBadgeEl && docSensBadgeEl.style.display !== 'none' && docSensBadgeEl.textContent))) {
+                let row = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-family:' + hfWord + ';font-size:' + hfsWord + ';color:' + hfcWord + ';">';
+                row += '<span>' + escapeWordHtml(docHeaderCompanyEl.textContent) + '</span>';
+                if (docSensBadgeEl && docSensBadgeEl.style.display !== 'none' && docSensBadgeEl.textContent) {
+                  row += '<span style="font-weight:700;padding:3px 10px;border-radius:3px;letter-spacing:1px;background:' + docSensBadgeEl.style.backgroundColor + ';color:' + docSensBadgeEl.style.color + ';">' + escapeWordHtml(docSensBadgeEl.textContent) + '</span>';
+                }
+                row += '</div>';
+                htmlContent += row;
+              }
 
               // Add logo if present - convert to base64 for Word compatibility
               const logoElement = document.querySelector('.doc-theme-logo');
@@ -997,7 +1255,7 @@ app.get('/', (req, res) => {
                 try {
                   const base64Logo = await imageToBase64(logoElement);
                   const logoHeight = (currentTheme && currentTheme.logoCopyToWordHeight) ? currentTheme.logoCopyToWordHeight : '22px';
-                  htmlContent += '<div style="margin-bottom: 16px;"><img src="' + base64Logo + '" style="height: ' + logoHeight + '; display: block;" alt="Logo" /></div>';
+                  htmlContent += '<div style="margin-bottom: 24px; padding-bottom: 14px; overflow: hidden;"><img src="' + base64Logo + '" style="height: ' + logoHeight + '; display: block;" alt="Logo" /></div>';
                 } catch (err) {
                   console.warn('Logo conversion failed:', err);
                   // Skip logo if conversion fails rather than using potentially broken URL
@@ -1008,11 +1266,17 @@ app.get('/', (req, res) => {
               const titleElement = document.getElementById('doc-title');
               if (titleElement && titleElement.style.display !== 'none') {
                 const titleStyle = window.getComputedStyle(titleElement);
-                // Use the actual computed font from the title element to ensure accuracy
                 const titleFont = titleStyle.fontFamily;
                 const titleLineHeight = titleStyle.lineHeight || '1.2';
-                // Use an H1 with inline size and !important so Word preserves the size on paste
-                htmlContent += '<h1 style="font-family: ' + titleFont + ' !important; font-size: ' + titleStyle.fontSize + ' !important; line-height: ' + titleLineHeight + ' !important; font-weight: 700; margin: 8px 0 16px; padding: 0;">' + titleElement.textContent + '</h1>';
+                htmlContent += '<h1 style="font-family: ' + titleFont + ' !important; font-size: ' + titleStyle.fontSize + ' !important; line-height: ' + titleLineHeight + ' !important; font-weight: 700; margin: 24px 0 6px; padding: 0; clear: both;">' + escapeWordHtml(titleElement.textContent) + '</h1>';
+                const hcW = tWord.headingColor || '#333';
+                const a2W = tWord.accentSecondary || '';
+                const a3W = tWord.accentTertiary || hcW;
+                if (tWord.coverStyle === 'gradient' && a2W) {
+                  htmlContent += '<div style="height:3px;border-radius:2px;margin:0 0 24px 0;background:linear-gradient(90deg,' + hcW + ',' + a2W + ',' + a3W + ');"></div>';
+                } else if (hcW) {
+                  htmlContent += '<div style="height:2px;opacity:0.25;margin:0 0 24px 0;background:' + hcW + ';"></div>';
+                }
               }
 
               // Add main content with proper font styling
@@ -1056,6 +1320,7 @@ app.get('/', (req, res) => {
                 if (!cfg || cfg.enabled === false) return;
                 const borderColor = cfg.borderColor || '#dee2e6';
                 const headerBg = cfg.headerBg || '#f1f3f5';
+                const headerFg = cfg.headerFg || '';
                 const headerTextWeight = cfg.headerTextWeight || '600';
                 const bandEvenBg = cfg.bandEvenBg || '#fafbfc';
                 const firstColumnBold = cfg.firstColumnBold !== false;
@@ -1077,17 +1342,18 @@ app.get('/', (req, res) => {
                   
                   // Header row styling
                   const thead = table.querySelector('thead');
+                  const headerColorPart = headerFg ? ('color: ' + headerFg + '; ') : '';
                   if (thead) {
                     thead.querySelectorAll('th, td').forEach((cell) => {
                       const style = cell.getAttribute('style') || '';
-                      cell.setAttribute('style', 'background: ' + headerBg + '; font-weight: ' + headerTextWeight + '; ' + style);
+                      cell.setAttribute('style', 'background: ' + headerBg + '; font-weight: ' + headerTextWeight + '; ' + headerColorPart + style);
                     });
                   } else {
                     const firstRow = table.querySelector('tr');
                     if (firstRow) {
                       firstRow.querySelectorAll('th, td').forEach((cell) => {
                         const style = cell.getAttribute('style') || '';
-                        cell.setAttribute('style', 'background: ' + headerBg + '; font-weight: ' + headerTextWeight + '; ' + style);
+                        cell.setAttribute('style', 'background: ' + headerBg + '; font-weight: ' + headerTextWeight + '; ' + headerColorPart + style);
                       });
                     }
                   }
@@ -1146,7 +1412,7 @@ app.get('/', (req, res) => {
               try { addWordHeadingNumbering(tempContent, currentTheme || {}); } catch (_) {}
 
               // Now, apply table styling for Word
-              try { applyWordTableStyling(tempContent, tableWordStyling || {}); } catch (_) {}
+              try { applyWordTableStyling(tempContent, (currentTheme && currentTheme.tableWordStyling) || tableWordStyling || {}); } catch (_) {}
 
               // Fix anchor links to be relative for Word (internal document links)
               const fixAnchorLinks = (root) => {

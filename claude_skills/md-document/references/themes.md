@@ -126,8 +126,11 @@ Full theme configuration details for md-preview themes. Read this file when you 
 **Company**: Seed Analytics
 **Primary colour**: #051F4C (dark navy)
 **Font**: Plus Jakarta Sans / Sora (loaded via Google Fonts)
+**Presentation reference**: Layout and footer align with `examples/Presentation1.pptx` and the Seed Analytics brand guide (`examples/LATEST seed-analytics-brand-guide-2023.pdf`). Slides use a **white background** with a transparent footer bar (`presentationDefaultBackground: "light"`, `presentationFooterBackground: "transparent"`). Footer text "Private and Confidential" when `sensitivity: confidential`, colour #B5AFA2. Logo uses the **colour (navy)** variant on white slides (brand guide: preferred logo on light backgrounds).
 
 ### Typography
+
+#### Document mode
 
 | Element | Size | Weight |
 |---------|------|--------|
@@ -138,12 +141,24 @@ Full theme configuration details for md-preview themes. Read this file when you 
 | Body text | 14px | — |
 | Line height | 1.7 | — |
 
+#### Presentation mode (per brand guide)
+
+| Element | Font | Weight |
+|---------|------|--------|
+| Slide titles / headings | Plus Jakarta Sans | **Light (300)** |
+| Sub-headings | Plus Jakarta Sans | **Medium (500)** |
+| Body copy | Sora | **Regular (400)** |
+
 ### Colours
 
-- Body text: #051F4C
-- Headings: #051F4C
-- Links: #051F4C
-- Header/footer: #051F4C
+- Body text: #051F4C (Navy Blue)
+- Headings: #051F4C (Navy Blue)
+- Links: #051F4C (Navy Blue)
+- Header/footer: #051F4C (Navy Blue)
+- Accent / Medium Gold: #B5AFA2
+- Accent secondary / Dark Gold: #88837A
+- Accent tertiary / Light Gold: #D3CFC7
+- Silver: #E6E6E6
 
 ### Print Settings
 
@@ -191,6 +206,20 @@ Full theme configuration details for md-preview themes. Read this file when you 
   "headingColor": "#051F4C",
   "linkColor": "#051F4C",
   "headerFooterColor": "#051F4C",
+  "accentColor": "#B5AFA2",
+  "accentSecondary": "#88837A",
+  "accentTertiary": "#D3CFC7",
+  "presentationFooterTextColor": "#B5AFA2",
+  "presentationFooterBackground": "transparent",
+  "presentationDefaultBackground": "light",
+  "presentationHeadingFontFamily": "'Plus Jakarta Sans', Arial, sans-serif",
+  "presentationHeadingFontWeight": "300",
+  "presentationSubheadingFontWeight": "500",
+  "presentationBodyFontFamily": "'Sora', Arial, sans-serif",
+  "presentationBodyFontWeight": "400",
+  "sensitivityLabels": {
+    "Confidential": "Private and Confidential"
+  },
   "headingNumbering": true,
   "headingNumberingMaxLevel": 3,
   "printFooterEnabled": true,

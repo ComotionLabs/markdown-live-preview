@@ -34,6 +34,8 @@ From the skill directory (`claude_skills/md-document`), omit `--themes-dir` to u
 
 Tests use **pytest** and live in `tests/`. Scenarios cover frontmatter parsing, document/presentation mode, and PDF/Word/.docx output.
 
+**CI:** On every push and pull request, GitHub Actions runs [`.github/workflows/test-build.yml`](../../.github/workflows/test-build.yml): builds the skill package (`md-document.skill`) and runs `pytest` for this skill.
+
 **Using a virtual environment** (recommended on macOS/Homebrew Python):
 
 ```bash

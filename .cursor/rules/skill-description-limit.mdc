@@ -1,0 +1,25 @@
+---
+description: Claude / Agent Skills (SKILL.md) conformance
+globs: "**/SKILL.md"
+alwaysApply: false
+---
+
+# Claude skills conformance
+
+Skills follow the [Agent Skills](https://agentskills.io/) open standard (Claude Code, Cursor, etc.).
+
+## Required frontmatter
+
+| Field | Rule |
+|-------|------|
+| **name** | Required. Max 64 chars; lowercase letters, numbers, hyphens only (e.g. `md-document`). |
+| **description** | Required. Max **1024 characters**. Used for discovery; keep concise and put detail in the body. |
+
+## Structure
+
+- Skill = folder with `SKILL.md` (required) and optional supporting files: `scripts/`, `examples/`, `references/`, etc.
+- YAML frontmatter between `---` at top of `SKILL.md`; markdown body for instructions.
+
+## Optional frontmatter (spec)
+
+- `license`, `compatibility`, `metadata`, `allowed-tools` — all optional.
