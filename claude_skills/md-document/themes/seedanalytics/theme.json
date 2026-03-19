@@ -26,6 +26,8 @@
   "presentationFooterTextColor": "#B5AFA2",
   "presentationFooterBackground": "transparent",
   "presentationDefaultBackground": "light",
+  "presentationLogoMaxHeight": "11mm",
+  "presentationCoverSubtitleColor": "#F2EFE8",
   "presentationHeadingFontFamily": "'Plus Jakarta Sans', Arial, sans-serif",
   "presentationHeadingFontWeight": "300",
   "presentationSubheadingFontWeight": "500",

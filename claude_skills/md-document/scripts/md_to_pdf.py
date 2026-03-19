@@ -378,6 +378,9 @@ def build_presentation_html(content, theme_name, sensitivity, with_narrative=Fal
     subheading_weight = t.get("presentationSubheadingFontWeight", "700")
     body_font = t.get("presentationBodyFontFamily", font)
     body_weight = t.get("presentationBodyFontWeight", "400")
+    logo_max_h = t.get("presentationLogoMaxHeight", "5.5mm")
+    # Dark cover/divider slides: default must read on navy, gradients, and photo backs (accent1 often fails)
+    cover_subtitle_color = t.get("presentationCoverSubtitleColor", "rgba(255,255,255,0.90)")
 
     logo_uri_dark  = find_logo(theme_name, prefer_white=True, td=td)
     logo_uri_light = find_logo(theme_name, prefer_white=False, td=td)
@@ -482,7 +485,7 @@ body {{ font-family: {font}; }}
     padding: 0 8mm;
     flex-shrink: 0;
 }}
-.logo {{ max-height: 5.5mm; }}
+.logo {{ max-height: {logo_max_h}; }}
 .slide-footer-right {{
     display: flex; align-items: center; gap: 3mm;
     flex-shrink: 0; white-space: nowrap;
@@ -567,10 +570,17 @@ body {{ font-family: {font}; }}
     margin: 4mm 0; color: rgba(255,255,255,0.75); font-style:italic;
 }}
 .subtitle {{
-    color: {accent1}; font-size: 16pt;
+    color: {cover_subtitle_color}; font-size: 16pt;
     font-family: {body_font}; font-weight: {body_weight};
     margin-top: 2mm;
 }}
+.subtitle p {{ color: inherit; margin: 0; }}
+.subtitle h1, .subtitle h2, .subtitle h3, .subtitle h4, .subtitle h5, .subtitle h6 {{
+    color: inherit; font-family: inherit; font-size: inherit; font-weight: {body_weight};
+    line-height: inherit; margin: 0;
+}}
+.subtitle strong {{ color: inherit; font-weight: 600; }}
+.subtitle a {{ color: {accent2}; }}
 
 /* Light slide typography (white background) */
 .cover-title-light {{

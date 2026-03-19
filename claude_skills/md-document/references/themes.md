@@ -9,6 +9,10 @@ Full theme configuration details for md-preview themes. Read this file when you 
 3. Theme JSON Schema
 4. Creating Custom Themes
 
+### Presentation — dark cover / divider subtitle
+
+On slides that use a dark page background (solid `headingColor`, gradient, or imagery), the title-slide subtitle uses the `.subtitle` class. Its colour comes from **`presentationCoverSubtitleColor`** in `theme.json`; if omitted, the default is **`rgba(255,255,255,0.90)`** so copy stays readable on every theme. Set a custom value for a brand tint (e.g. Seed Analytics uses `#F2EFE8`).
+
 ---
 
 ## Comotion Theme
@@ -126,7 +130,7 @@ Full theme configuration details for md-preview themes. Read this file when you 
 **Company**: Seed Analytics
 **Primary colour**: #051F4C (dark navy)
 **Font**: Plus Jakarta Sans / Sora (loaded via Google Fonts)
-**Presentation reference**: Layout and footer align with `examples/Presentation1.pptx` and the Seed Analytics brand guide (`examples/LATEST seed-analytics-brand-guide-2023.pdf`). Slides use a **white background** with a transparent footer bar (`presentationDefaultBackground: "light"`, `presentationFooterBackground: "transparent"`). Footer text "Private and Confidential" when `sensitivity: confidential`, colour #B5AFA2. Logo uses the **colour (navy)** variant on white slides (brand guide: preferred logo on light backgrounds).
+**Presentation reference**: Layout and footer align with `examples/Presentation1.pptx` and the Seed Analytics brand guide (`examples/LATEST seed-analytics-brand-guide-2023.pdf`). With `presentationDefaultBackground: "light"`, **content** slides use a white body; **cover and divider** slides use a full-bleed navy (`headingColor`) background. Subtitle text on those dark slides uses `presentationCoverSubtitleColor` (Seed sets a warm off-white `#F2EFE8`; other themes rely on the global default light subtitle unless overridden). Footer bar is transparent (`presentationFooterBackground: "transparent"`). Footer text "Private and Confidential" when `sensitivity: confidential`, colour #B5AFA2. Footer logo size is set with `presentationLogoMaxHeight` (larger than the default 5.5mm). On white slides the colour logo variant is used; on dark slides the white logo asset is preferred when present.
 
 ### Typography
 
@@ -212,6 +216,8 @@ Full theme configuration details for md-preview themes. Read this file when you 
   "presentationFooterTextColor": "#B5AFA2",
   "presentationFooterBackground": "transparent",
   "presentationDefaultBackground": "light",
+  "presentationLogoMaxHeight": "11mm",
+  "presentationCoverSubtitleColor": "#F2EFE8",
   "presentationHeadingFontFamily": "'Plus Jakarta Sans', Arial, sans-serif",
   "presentationHeadingFontWeight": "300",
   "presentationSubheadingFontWeight": "500",
