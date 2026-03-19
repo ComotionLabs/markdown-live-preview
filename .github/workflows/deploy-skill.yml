@@ -1,10 +1,8 @@
 # Build the Claude skill and publish it as an artifact.
 #
-# Recommended: tag push (no race with "Publish")
-#   GitHub cannot lock draft releases — anyone can publish before CI finishes.
-#   Instead: push an annotated tag, e.g. git tag v1.2.0 && git push origin v1.2.0
-#   This workflow builds first, then creates a PUBLISHED release with the .skill
-#   attached in one step, so there is no draft for someone to publish early.
+# Recommended: tag push (e.g. v1.2.0). Build runs first; creating the GitHub release
+# waits for approval on the "release" environment (configure required reviewers under
+# Repo Settings → Environments → release).
 #
 # Manual run: build only; download md-document.skill from the run Summary (Artifacts).
 
@@ -20,7 +18,7 @@ permissions:
   contents: write
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,12 +33,31 @@ jobs:
           name: md-document.skill
           path: claude_skills/build/md-document.skill
 
+  publish-release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Download built skill
+        uses: actions/download-artifact@v4
+        with:
+          name: md-document.skill
+          path: release-asset
+
+      - name: Resolve skill file path
+        id: skill
+        run: |
+          f=$(find release-asset -type f \( -name 'md-document.skill' -o -name '*.skill' \) | head -1)
+          echo "Found: $f"
+          test -n "$f" && test -f "$f"
+          echo "path=$f" >> "$GITHUB_OUTPUT"
+
       - name: Create release with skill asset
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: claude_skills/build/md-document.skill
+          files: ${{ steps.skill.outputs.path }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

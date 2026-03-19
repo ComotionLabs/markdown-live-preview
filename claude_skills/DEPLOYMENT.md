@@ -43,10 +43,20 @@ Deployment builds the skill and publishes it as a Git artifact so others can dow
 
 ### Automated deployment (GitHub Actions)
 
+#### One-time: approval gate for releases
+
+The workflow uses a GitHub **Environment** named `release` so publishing waits for human approval:
+
+1. In the repo: **Settings** → **Environments** → **New environment** → name it **`release`** (must match the workflow).
+2. Under **Environment protection rules**, enable **Required reviewers** and add the people or teams who may approve a release.
+3. (Optional) Add a **wait timer** if you want a minimum delay before approvers can act.
+
+After you push a version tag, the **build** job runs immediately. The **publish-release** job then pauses until an approver approves it in the Actions run (or via the pending deployment notification). Only after approval does GitHub create the release and attach `md-document.skill`.
+
 The workflow **`.github/workflows/deploy-skill.yml`** runs when:
 
 1. **A version tag is pushed** (recommended, e.g. `v1.2.0`)  
-   The skill is built, then GitHub Actions **creates a published release** for that tag and attaches `md-document.skill` in one step. There is no draft phase, so no one can click “Publish” before the build finishes (GitHub does not support locking draft releases).
+   The skill is **built** first (artifact available on the run). Creating the **published release** happens only after approval on the `release` environment, then `md-document.skill` is attached.
 
    To deploy:
 
@@ -55,7 +65,7 @@ The workflow **`.github/workflows/deploy-skill.yml`** runs when:
    git push origin v1.2.0
    ```
 
-   Users download `md-document.skill` from the release assets.
+   Approve the pending **publish-release** deployment when ready. Users download `md-document.skill` from the release assets.
 
 2. **Manual run (workflow_dispatch)**  
    You can run the workflow from the Actions tab without creating a release. The workflow builds the skill and publishes it as a **workflow artifact**. Download the `.skill` file from the run’s Summary page (Artifacts section).
