@@ -95,7 +95,12 @@ function loadTheme(themeName) {
         coverStyle: '',
         accentColor: '',
         accentSecondary: '',
-        accentTertiary: ''
+        accentTertiary: '',
+        coverBorderBottomWidth: '',
+        titleRuleHeight: '',
+        titleRuleOpacity: '',
+        titleSubheadingColor: '',
+        logoHeight: ''
     };
   }
   try {
@@ -143,6 +148,11 @@ function loadTheme(themeName) {
         accentColor: manifest.accentColor || '',
         accentSecondary: manifest.accentSecondary || '',
         accentTertiary: manifest.accentTertiary || '',
+        coverBorderBottomWidth: manifest.coverBorderBottomWidth || '',
+        titleRuleHeight: manifest.titleRuleHeight || '',
+        titleRuleOpacity: manifest.titleRuleOpacity,
+        titleSubheadingColor: manifest.titleSubheadingColor || '',
+        logoHeight: manifest.logoHeight || '',
         sensitivityLevels: manifest.sensitivityLevels || {
           Public: { bg: '#e7f5ff', fg: '#0b7285' },
           Internal: { bg: '#f1f3f5', fg: '#343a40' },
@@ -298,6 +308,10 @@ function loadTheme(themeName) {
         accentColor: "#B5AFA2",
         accentSecondary: "#88837A",
         accentTertiary: "#D3CFC7",
+        coverBorderBottomWidth: "6px",
+        titleRuleHeight: "5px",
+        titleRuleOpacity: 0.5,
+        titleSubheadingColor: "#5a6f86",
         sensitivityLevels: {
           Public: { bg: "#E6E6E6", fg: "#051F4C" },
           Internal: { bg: "#E6E6E6", fg: "#051F4C" },
@@ -336,6 +350,11 @@ function loadTheme(themeName) {
     accentColor: '',
     accentSecondary: '',
     accentTertiary: '',
+    coverBorderBottomWidth: '',
+    titleRuleHeight: '',
+    titleRuleOpacity: '',
+    titleSubheadingColor: '',
+    logoHeight: '',
     headingNumbering: false,
     headingNumberingMaxLevel: 3,
     printFooterEnabled: true,
@@ -394,13 +413,21 @@ function buildDocumentLayoutCss(theme) {
   const hf = theme.headerFooterFontFamily || theme.fontFamily;
   const hfs = theme.headerFooterFontSize || '0.9em';
   const hfc = theme.headerFooterColor || hc;
+  const coverBorderBottom = theme.coverBorderBottomWidth || '3px';
+  const titleRuleH = theme.titleRuleHeight || '2px';
+  const titleRuleOpacity =
+    theme.titleRuleOpacity != null && theme.titleRuleOpacity !== ''
+      ? Number(theme.titleRuleOpacity)
+      : 0.25;
+  const titleRuleOpacityStr = Number.isFinite(titleRuleOpacity) ? String(titleRuleOpacity) : '0.25';
+  const gradTitleRuleH = theme.titleRuleHeight || '3px';
   if (theme.coverStyle === 'gradient' && a2) {
     const grad = `linear-gradient(90deg,${hc},${a2},${a3})`;
     return `
         .doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-family: ${hf}; font-size: ${hfs}; color: ${hfc}; }
         .doc-cover { margin-bottom: 24px; padding-bottom: 14px; overflow: hidden; border-bottom: 4px solid ${a2}; border-image: ${grad} 1; }
         .doc-cover .doc-theme-brand { margin: 0; }
-        .title-rule { background: ${grad}; height: 3px; border-radius: 2px; margin-bottom: 24px; }
+        .title-rule { background: ${grad}; height: ${gradTitleRuleH}; border-radius: 2px; margin-bottom: 24px; }
         #doc-content h1 { border-bottom: 2px solid ${a2}; padding-bottom: 4px; margin-top: 26px; }
         #doc-content h2 { border-left: 3px solid ${a1}; padding-left: 10px; }
         #doc-content h3 { border-left: 2px solid ${a3}; padding-left: 8px; }
@@ -408,9 +435,9 @@ function buildDocumentLayoutCss(theme) {
   }
   return `
         .doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-family: ${hf}; font-size: ${hfs}; color: ${hfc}; }
-        .doc-cover { margin-bottom: 24px; padding-bottom: 14px; overflow: hidden; border-bottom: 3px solid ${hc}; }
+        .doc-cover { margin-bottom: 24px; padding-bottom: 14px; overflow: hidden; border-bottom: ${coverBorderBottom} solid ${hc}; }
         .doc-cover .doc-theme-brand { margin: 0; }
-        .title-rule { background: ${hc}; height: 2px; opacity: 0.25; margin-bottom: 24px; }
+        .title-rule { background: ${hc}; height: ${titleRuleH}; opacity: ${titleRuleOpacityStr}; margin-bottom: 24px; }
         #doc-content h1 { border-bottom: 1.5px solid ${hc}; padding-bottom: 4px; margin-top: 26px; }
   `;
 }
@@ -844,6 +871,7 @@ app.get('/', (req, res) => {
             margin: 0 auto;
             padding: 20px;
             line-height: ${theme.lineHeight};
+            background-color: #fff;
             ${theme.bodyColor ? `color: ${theme.bodyColor};` : ''}
         }
         .header {
@@ -861,11 +889,12 @@ app.get('/', (req, res) => {
             font-weight: bold;
             font-size: 12px;
         }
-        .content { padding: 0; border: none; background: transparent; }
+        .content { padding: 0; border: none; background: #fff; }
         ${buildDocumentLayoutCss(theme)}
         .doc-theme-brand { display: ${theme.logoSrc ? 'block' : 'none'}; }
-        .doc-theme-logo { height: 44px; }
+        .doc-theme-logo { height: ${theme.logoHeight || '44px'}; }
         .doc-title { font-family: ${theme.fontFamily}; font-size: ${theme.titleFontSize}; font-weight: 700; margin: 24px 0 6px; line-height: 1.2; clear: both; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
+        ${theme.titleSubheadingColor ? `#doc-content > p:first-of-type { color: ${theme.titleSubheadingColor}; }` : ''}
         #doc-content h1 { font-family: ${theme.fontFamily}; font-size: ${theme.h1FontSize}; font-weight: ${theme.h1FontWeight || '700'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
         #doc-content h2 { font-family: ${theme.fontFamily}; font-size: ${theme.h2FontSize}; font-weight: ${theme.h2FontWeight || '400'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
         #doc-content h3 { font-family: ${theme.fontFamily}; font-size: ${theme.h3FontSize}; font-weight: ${theme.h3FontWeight || '400'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
@@ -913,6 +942,7 @@ app.get('/', (req, res) => {
         ${getNumberingCss(theme)}
         /* Smooth scrolling for anchor links */
         html {
+            color-scheme: light;
             scroll-behavior: smooth;
         }
         /* Ensure headings with IDs are scrollable targets */
@@ -942,7 +972,7 @@ app.get('/', (req, res) => {
         @media print {
             @page { margin: ${theme.printMargins.top} ${theme.printMargins.right} ${theme.printMargins.bottom} ${theme.printMargins.left}; }
             .header { display: none !important; }
-            body { margin: 0; padding: 0; }
+            body { margin: 0; padding: 0; background: #fff; }
             #doc-content { border: none; padding: 0 0 ${theme.printContentBottomPadding} 0; }
             .doc-cover { margin-bottom: 16px; }
             .doc-theme-brand { margin: 0; }
@@ -1100,20 +1130,28 @@ app.get('/', (req, res) => {
           const hf = t.headerFooterFontFamily || t.fontFamily;
           const hfs = t.headerFooterFontSize || '0.9em';
           const hfc = t.headerFooterColor || hc;
+          const coverBorderBottom = t.coverBorderBottomWidth || '3px';
+          const titleRuleH = t.titleRuleHeight || '2px';
+          let titleRuleOpacityStr = '0.25';
+          if (t.titleRuleOpacity != null && t.titleRuleOpacity !== '') {
+            const n = Number(t.titleRuleOpacity);
+            titleRuleOpacityStr = Number.isFinite(n) ? String(n) : '0.25';
+          }
+          const gradTitleRuleH = t.titleRuleHeight || '3px';
           if (t.coverStyle === 'gradient' && a2) {
             const grad = 'linear-gradient(90deg,' + hc + ',' + a2 + ',' + a3 + ')';
             return '.doc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-family:' + hf + ';font-size:' + hfs + ';color:' + hfc + ';}' +
               '.doc-cover{margin-bottom:24px;padding-bottom:14px;overflow:hidden;border-bottom:4px solid ' + a2 + ';border-image:' + grad + ' 1;}' +
               '.doc-cover .doc-theme-brand{margin:0;}' +
-              '.title-rule{background:' + grad + ';height:3px;border-radius:2px;margin-bottom:24px;}' +
+              '.title-rule{background:' + grad + ';height:' + gradTitleRuleH + ';border-radius:2px;margin-bottom:24px;}' +
               '#doc-content h1{border-bottom:2px solid ' + a2 + ';padding-bottom:4px;margin-top:26px;}' +
               '#doc-content h2{border-left:3px solid ' + a1 + ';padding-left:10px;}' +
               '#doc-content h3{border-left:2px solid ' + a3 + ';padding-left:8px;}';
           }
           return '.doc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-family:' + hf + ';font-size:' + hfs + ';color:' + hfc + ';}' +
-            '.doc-cover{margin-bottom:24px;padding-bottom:14px;overflow:hidden;border-bottom:3px solid ' + hc + ';}' +
+            '.doc-cover{margin-bottom:24px;padding-bottom:14px;overflow:hidden;border-bottom:' + coverBorderBottom + ' solid ' + hc + ';}' +
             '.doc-cover .doc-theme-brand{margin:0;}' +
-            '.title-rule{background:' + hc + ';height:2px;opacity:0.25;margin-bottom:24px;}' +
+            '.title-rule{background:' + hc + ';height:' + titleRuleH + ';opacity:' + titleRuleOpacityStr + ';margin-bottom:24px;}' +
             '#doc-content h1{border-bottom:1.5px solid ' + hc + ';padding-bottom:4px;margin-top:26px;}';
         }
         function numberingCssFromTheme(t) {
@@ -1145,9 +1183,15 @@ app.get('/', (req, res) => {
           const bodyCol = t.bodyColor ? 'color:' + t.bodyColor + ';' : '';
           const titleCol = t.headingColor ? 'color:' + t.headingColor + ';' : '';
           const h1c = t.headingColor ? 'color:' + t.headingColor + ';' : '';
+          const subCol = t.titleSubheadingColor || '';
+          const subRule = subCol ? '#doc-content > p:first-of-type{color:' + subCol + ';}' : '';
+          const logoH = t.logoHeight || '';
+          const logoRule = logoH ? '.doc-theme-logo{height:' + logoH + ';}' : '';
           return [
-            'body{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.bodyFontSize || '14px') + ';line-height:' + (t.lineHeight || '1.6') + ';' + bodyCol + '}',
-            '#doc-content{' + bodyCol + '}',
+            'html{color-scheme:light;}',
+            'body{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.bodyFontSize || '14px') + ';line-height:' + (t.lineHeight || '1.6') + ';background-color:#fff;' + bodyCol + '}',
+            '.content{background-color:#fff;}',
+            '#doc-content{' + bodyCol + 'background-color:#fff;}',
             '.doc-title{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.titleFontSize || '32px') + ';font-weight:700;' + titleCol + '}',
             '#doc-content h1{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.h1FontSize || '21px') + ';font-weight:' + (t.h1FontWeight || '700') + ';' + h1c + '}',
             '#doc-content h2{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.h2FontSize || '18px') + ';font-weight:' + (t.h2FontWeight || '400') + ';' + h1c + '}',
@@ -1155,7 +1199,9 @@ app.get('/', (req, res) => {
             documentLayoutCssFromTheme(t),
             numberingCssFromTheme(t),
             tableHeaderCssFromTheme(t),
-            linkCssFromTheme(t)
+            linkCssFromTheme(t),
+            subRule,
+            logoRule
           ].join('\\n');
         }
         function applyDynamicTheme(t) {
