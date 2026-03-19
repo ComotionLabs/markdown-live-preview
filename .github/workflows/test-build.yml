@@ -52,6 +52,9 @@ jobs:
             build/examples/comotion-ai-document.pdf \
             build/examples/comotion-ai-presentation.pdf \
             build/examples/seedanalytics-document.pdf \
-            build/examples/seedanalytics-presentation.pdf; do
+            build/examples/seedanalytics-presentation.pdf \
+            build/examples/comotion-presentation-notes.pdf \
+            build/examples/comotion-ai-presentation-notes.pdf \
+            build/examples/seedanalytics-presentation-notes.pdf; do
             test -s "$f" || { echo "missing or empty: $f"; exit 1; }
           done
