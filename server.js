@@ -28,6 +28,36 @@ renderer.heading = function(text, level, raw) {
   return `<h${level} id="${id}">${text}</h${level}>`;
 };
 
+const CALLOUT_LABELS = {
+  note: 'Note',
+  tip: 'Tip',
+  warning: 'Warning',
+  important: 'Important',
+  caution: 'Caution'
+};
+
+// GitHub-flavoured alert blockquotes: > [!NOTE] etc.
+// Marked merges consecutive quote lines into one <p>, e.g. <p>[!NOTE]\nHello</p>
+renderer.blockquote = function(quote) {
+  const m = quote.match(/^\s*<p>\s*\[!(NOTE|TIP|WARNING|IMPORTANT|CAUTION)\]\s*(?:\n|<br\s*\/?>)/i);
+  if (m) {
+    const typeM = quote.match(/\[!(NOTE|TIP|WARNING|IMPORTANT|CAUTION)\]/i);
+    const type = typeM[1].toLowerCase();
+    const body = '<p>' + quote.slice(m[0].length);
+    const label = CALLOUT_LABELS[type] || typeM[1];
+    return (
+      '<div class="callout callout-' +
+      type +
+      '" role="note"><div class="callout-title">' +
+      escapeHtml(label) +
+      '</div><div class="callout-body">' +
+      body +
+      '</div></div>\n'
+    );
+  }
+  return '<blockquote>\n' + quote + '</blockquote>\n';
+};
+
 marked.setOptions({
   mangle: false,
   // Disable built-in headerIds to avoid deprecation warnings; we add IDs via custom renderer
@@ -389,6 +419,201 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+/** CSS variables for presentation elements; updated client-side when theme changes */
+function buildRootThemeVarsCss(t) {
+  if (!t) t = {};
+  const hc = t.headingColor || '#333';
+  const a1 = t.accentColor || hc;
+  const a2 = t.accentSecondary && String(t.accentSecondary).trim() ? t.accentSecondary : a1;
+  const a3 = t.accentTertiary || hc;
+  const body = t.bodyColor && String(t.bodyColor).trim() ? t.bodyColor : '#343a40';
+  const link = t.linkColor || '#0066cc';
+  return `:root {
+            --theme-hc: ${hc};
+            --theme-a1: ${a1};
+            --theme-a2: ${a2};
+            --theme-a3: ${a3};
+            --theme-body: ${body};
+            --theme-link: ${link};
+        }`;
+}
+
+/** Rich presentation blocks — uses :root vars from buildRootThemeVarsCss */
+function buildPresentationElementsCss() {
+  return `
+        /* Pull quote / default blockquote */
+        #doc-content blockquote {
+            margin: 1rem 0;
+            padding: 0.75rem 1rem 0.75rem 1.15rem;
+            border-left: 4px solid var(--theme-a1);
+            background: #f8f9fa;
+            font-size: 1.08em;
+            font-style: italic;
+            color: var(--theme-body);
+        }
+        #doc-content blockquote p:first-child { margin-top: 0; }
+        #doc-content blockquote p:last-child { margin-bottom: 0; }
+
+        /* GitHub-style callouts */
+        #doc-content .callout {
+            margin: 1rem 0;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            border-left: 4px solid;
+            font-style: normal;
+        }
+        #doc-content .callout-title {
+            font-weight: 700;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.4rem;
+        }
+        #doc-content .callout-body p:first-child { margin-top: 0; }
+        #doc-content .callout-body p:last-child { margin-bottom: 0; }
+        #doc-content .callout-note { border-left-color: #0969da; background: #ddf4ff; color: #1f2328; }
+        #doc-content .callout-note .callout-title { color: #0969da; }
+        #doc-content .callout-tip { border-left-color: #1a7f37; background: #dafbe1; color: #1f2328; }
+        #doc-content .callout-tip .callout-title { color: #1a7f37; }
+        #doc-content .callout-warning { border-left-color: #9a6700; background: #fff8c5; color: #1f2328; }
+        #doc-content .callout-warning .callout-title { color: #9a6700; }
+        #doc-content .callout-important { border-left-color: #a40e26; background: #ffebe9; color: #1f2328; }
+        #doc-content .callout-important .callout-title { color: #a40e26; }
+        #doc-content .callout-caution { border-left-color: #cf222e; background: #ffebe9; color: #1f2328; }
+        #doc-content .callout-caution .callout-title { color: #cf222e; }
+
+        /* Stat / KPI block (:::stat) */
+        #doc-content .stat-block {
+            margin: 1.25rem 0;
+            padding: 1.25rem 1.5rem;
+            border-radius: 8px;
+            background: #fafbfc;
+            border: 1px solid #e9ecef;
+            font-style: normal;
+        }
+        #doc-content .stat-block > h1:first-of-type {
+            font-size: 2.75rem;
+            line-height: 1.05;
+            margin: 0 0 0.35em;
+            font-weight: 800;
+            color: var(--theme-a1);
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        #doc-content .stat-block > h1:first-of-type + p {
+            font-size: 1.05rem;
+            margin: 0 0 0.85rem;
+            font-weight: 500;
+            color: var(--theme-body);
+            opacity: 0.9;
+        }
+        #doc-content .stat-block ul {
+            font-size: 0.88rem;
+            margin: 0.4rem 0 0;
+            padding-left: 1.25rem;
+            opacity: 0.92;
+        }
+        #doc-content .stat-block li { margin: 0.2em 0; }
+        #doc-content .stat-block h1::before,
+        #doc-content .stat-block h2::before,
+        #doc-content .stat-block h3::before {
+            content: none !important;
+            counter-increment: none !important;
+        }
+
+        /* Flow / arrow chain (:::flow) */
+        #doc-content .flow-block {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.35rem 0.55rem;
+            margin: 1.15rem 0;
+        }
+        #doc-content .flow-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.4em 0.95em;
+            border-radius: 999px;
+            border: 2px solid var(--theme-a1);
+            background: #fff;
+            font-weight: 600;
+            font-size: 0.95em;
+            color: var(--theme-hc);
+        }
+        #doc-content .flow-arrow {
+            color: var(--theme-a1);
+            font-size: 1.2em;
+            font-weight: 700;
+            user-select: none;
+        }
+
+        /* Two columns (:::columns … ||| …) */
+        #doc-content .columns-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.15rem 0;
+            align-items: start;
+        }
+        #doc-content .columns-left,
+        #doc-content .columns-right { min-width: 0; }
+        @media (max-width: 640px) {
+            #doc-content .columns-block { grid-template-columns: 1fr; }
+        }
+        @media print {
+            #doc-content .callout,
+            #doc-content .stat-block,
+            #doc-content .flow-block,
+            #doc-content .columns-block { break-inside: avoid; }
+        }
+    `;
+}
+
+/**
+ * Fenced custom blocks for presentations (processed before marked()).
+ * Supports nested :::stat / :::columns via recursive preprocessing on inner markdown.
+ */
+function preprocessCustomBlocks(markdown) {
+  if (!markdown) return markdown;
+  let md = markdown;
+
+  md = md.replace(/^:::stat\s*\n([\s\S]*?)^:::\s*$/gm, (_, inner) => {
+    const innerHtml = marked(preprocessCustomBlocks(inner.trim()));
+    return '\n<div class="stat-block">\n' + innerHtml + '\n</div>\n';
+  });
+
+  md = md.replace(/^:::flow\s*\n([\s\S]*?)^:::\s*$/gm, (_, inner) => {
+    const lines = inner.split(/\r?\n/);
+    const line = lines.map((l) => l.trim()).find((l) => l.length > 0) || '';
+    const parts = line.split('|').map((s) => s.trim()).filter(Boolean);
+    if (parts.length === 0) return '';
+    const items = parts
+      .map((p, i) => {
+        const arrow = i < parts.length - 1 ? '<span class="flow-arrow" aria-hidden="true">→</span>' : '';
+        return '<span class="flow-item">' + escapeHtml(p) + '</span>' + arrow;
+      })
+      .join('');
+    return '\n<div class="flow-block">' + items + '</div>\n';
+  });
+
+  md = md.replace(/^:::columns\s*\n([\s\S]*?)^:::\s*$/gm, (_, inner) => {
+    const bits = inner.split(/\r?\n\|\|\|\r?\n/);
+    const left = (bits[0] || '').trim();
+    const right = (bits.slice(1).join('\n|||\n') || '').trim();
+    const leftHtml = marked(preprocessCustomBlocks(left));
+    const rightHtml = marked(preprocessCustomBlocks(right));
+    return (
+      '\n<div class="columns-block"><div class="columns-left">' +
+      leftHtml +
+      '</div><div class="columns-right">' +
+      rightHtml +
+      '</div></div>\n'
+    );
+  });
+
+  return md;
 }
 
 function resolveSensitivityColors(theme, rawLevel) {
@@ -864,6 +1089,8 @@ app.get('/', (req, res) => {
     <title>Markdown Live Preview</title>
     ${theme.googleFontsUrl ? `<link href="${theme.googleFontsUrl}" rel="stylesheet">` : ''}
     <style>
+        ${buildRootThemeVarsCss(theme)}
+        ${buildPresentationElementsCss()}
         body {
             font-family: ${theme.fontFamily};
             font-size: ${theme.bodyFontSize};
@@ -1178,6 +1405,16 @@ app.get('/', (req, res) => {
           return '#doc-content a[href^=\"#\"]{color:' + c + ';text-decoration:none;}#doc-content a[href^=\"#\"]:hover{text-decoration:underline;}' +
             '#doc-content a:not([href^=\"#\"]){color:' + c + ';text-decoration:none;}#doc-content a:not([href^=\"#\"]):hover{text-decoration:underline;}';
         }
+        function rootVarsCssFromTheme(t) {
+          if (!t) t = {};
+          const hc = t.headingColor || '#333';
+          const a1 = t.accentColor || hc;
+          const a2 = (t.accentSecondary && String(t.accentSecondary).trim()) ? t.accentSecondary : a1;
+          const a3 = t.accentTertiary || hc;
+          const body = (t.bodyColor && String(t.bodyColor).trim()) ? t.bodyColor : '#343a40';
+          const link = t.linkColor || '#0066cc';
+          return ':root{--theme-hc:' + hc + ';--theme-a1:' + a1 + ';--theme-a2:' + a2 + ';--theme-a3:' + a3 + ';--theme-body:' + body + ';--theme-link:' + link + ';}';
+        }
         function buildThemeCss(t) {
           if (!t) return '';
           const bodyCol = t.bodyColor ? 'color:' + t.bodyColor + ';' : '';
@@ -1188,6 +1425,7 @@ app.get('/', (req, res) => {
           const logoH = t.logoHeight || '';
           const logoRule = logoH ? '.doc-theme-logo{height:' + logoH + ';}' : '';
           return [
+            rootVarsCssFromTheme(t),
             'html{color-scheme:light;}',
             'body{font-family:' + (t.fontFamily || 'sans-serif') + ';font-size:' + (t.bodyFontSize || '14px') + ';line-height:' + (t.lineHeight || '1.6') + ';background-color:#fff;' + bodyCol + '}',
             '.content{background-color:#fff;}',
@@ -1569,7 +1807,7 @@ function updateMarkdown() {
     // Strip both sensitivity and theme lines in the header area before the title
     const afterFrontmatter = stripFrontmatter(content);
     const headerCleaned = stripInlineMetadataBeforeTitle(afterFrontmatter, meta);
-    const html = marked(headerCleaned);
+    const html = marked(preprocessCustomBlocks(headerCleaned));
     io.emit('markdown-update', { html, title, meta, theme });
   } catch (error) {
     const errorMsg = `❌ Error reading file: ${error.message}`;

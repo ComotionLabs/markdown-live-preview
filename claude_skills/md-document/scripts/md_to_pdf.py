@@ -21,6 +21,8 @@ except ImportError:
     os.system(sys.executable + " -m pip install --user markdown -q")
     import markdown
 
+import markdown_rich as md_rich
+
 try:
     import weasyprint
 except ImportError:
@@ -179,6 +181,63 @@ def strip_escapes(text):
             result.append(re.sub(r'\\([~*_#>\|!\-\[\]`{}()+.])', r'\1', line))
     return "\n".join(result)
 
+
+def split_slide_content_and_narrative(text_clean):
+    """
+    Speaker notes: lines starting with '> ' (or '>') go to narrative — except
+    GitHub alerts (> [!TIP] …) and pull quotes (lines starting with > \").
+    Those stay in slide content so markdown_rich can render them.
+    """
+    content_lines, narr_lines = [], []
+    mode = None  # None | 'alert' | 'pullquote'
+    lines = text_clean.split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if mode == "alert":
+            if line.strip() == "":
+                content_lines.append(line)
+                mode = None
+                i += 1
+            elif re.match(r"^>", line):
+                content_lines.append(line)
+                i += 1
+            else:
+                mode = None
+                continue
+            continue
+        if mode == "pullquote":
+            if line.strip() == "":
+                content_lines.append(line)
+                mode = None
+                i += 1
+            elif re.match(r"^>", line):
+                content_lines.append(line)
+                i += 1
+            else:
+                mode = None
+                continue
+            continue
+
+        if re.match(r"^>\s*\[!", line):
+            content_lines.append(line)
+            mode = "alert"
+            i += 1
+        elif re.match(r'^>\s*"', line):
+            content_lines.append(line)
+            mode = "pullquote"
+            i += 1
+        elif line.startswith("> ") or line == ">":
+            narr_lines.append(line[2:] if line.startswith("> ") else "")
+            i += 1
+        else:
+            content_lines.append(line)
+            i += 1
+
+    narrative_text = " ".join(narr_lines).strip()
+    return "\n".join(content_lines), narrative_text
+
+
 # ── DOCUMENT MODE ─────────────────────────────────────────────────────────────
 
 def build_document_html(title, body_html, theme_name, sensitivity, td=None, word_friendly=False):
@@ -241,6 +300,7 @@ def build_document_html(title, body_html, theme_name, sensitivity, td=None, word
     logo_html  = f'<img src="{logo_uri}" alt="{t.get("logoAlt","")}" style="max-height:40px;max-width:260px;display:block;margin-bottom:8px;">' if logo_uri else ""
     gfonts_tag = f'<link rel="stylesheet" href="{gfonts}">' if gfonts else ""
     mt, mr, mb, ml = mg.get("top","22mm"), mg.get("right","18mm"), mg.get("bottom","22mm"), mg.get("left","18mm")
+    rich_skin = md_rich.build_root_theme_vars_css(t) + md_rich.RICH_ELEMENTS_CSS
 
     if word_friendly:
         # Word-openable HTML: no @page, no running headers, no CSS counters.
@@ -269,6 +329,7 @@ def build_document_html(title, body_html, theme_name, sensitivity, td=None, word
             f"strong{{color:{hc}}}a{{color:{lc};text-decoration:none}}"
             f".content-wrap{{padding-bottom:{bpad}}}"
         )
+        css = rich_skin + css
         return (
             f'<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">{gfonts_tag}<style>{css}</style></head>'
             f'<body>'
@@ -276,7 +337,7 @@ def build_document_html(title, body_html, theme_name, sensitivity, td=None, word
             f'<div class="doc-cover">{logo_html}</div>'
             f'<h1 class="doc-title">{title}</h1>'
             f'<div class="title-rule"></div>'
-            f'<div class="content-wrap">{body_html}</div>'
+            f'<div class="content-wrap md-rich">{body_html}</div>'
             f'</body></html>'
         )
     # PDF: full print CSS with @page, running headers, CSS counters
@@ -319,6 +380,7 @@ def build_document_html(title, body_html, theme_name, sensitivity, td=None, word
         f"strong{{color:{hc}}}a{{color:{lc};text-decoration:none}}"
         f".content-wrap{{padding-bottom:{bpad}}}"
     )
+    css = rich_skin + css
 
     return (
         f'<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">{gfonts_tag}<style>{css}</style></head>'
@@ -328,7 +390,7 @@ def build_document_html(title, body_html, theme_name, sensitivity, td=None, word
         f'<div class="doc-cover">{logo_html}</div>'
         f'<h1 class="doc-title">{title}</h1>'
         f'<div class="title-rule"></div>'
-        f'<div class="content-wrap">{body_html}</div>'
+        f'<div class="content-wrap md-rich">{body_html}</div>'
         f'</body></html>'
     )
 
@@ -355,8 +417,7 @@ def slide_title_and_body(text):
             found = True
         else:
             body.append(line)
-    body_html = markdown.markdown("\n".join(body).strip(),
-                                  extensions=["tables","fenced_code","attr_list","nl2br"])
+    body_html = md_rich.markdown_to_rich_html("\n".join(body).strip())
     return title, body_html
 
 def build_presentation_html(content, theme_name, sensitivity, with_narrative=False, td=None):
@@ -391,6 +452,7 @@ def build_presentation_html(content, theme_name, sensitivity, with_narrative=Fal
     has_images  = len(backgrounds) > 0
 
     gfonts_tag  = f'<link rel="stylesheet" href="{gfonts}">' if gfonts else ""
+    rich_skin = md_rich.build_root_theme_vars_css(t) + md_rich.RICH_ELEMENTS_CSS
 
     # Split slides on --- separator
     raw_slides  = re.split(r'\n---\n', content)
@@ -432,7 +494,7 @@ def build_presentation_html(content, theme_name, sensitivity, with_narrative=Fal
     narr_right = "64mm" if with_narrative else "0mm"
     narr_pad   = "80mm" if with_narrative else "16mm"
 
-    shared_css = f"""
+    shared_css = rich_skin + f"""
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 body {{ font-family: {font}; }}
 {page_css}
@@ -635,17 +697,9 @@ body {{ font-family: {font}; }}
         layout   = smeta.get("layout", "cover" if i == 0 else "content")
         bg_dir   = smeta.get("bg", "auto")
         narrative_text = smeta.get("narrative", "")
-
-        # Parse narrative from slide content: lines starting with > are narrative
-        content_lines, narr_lines = [], []
-        for line in text_clean.split("\n"):
-            if line.startswith("> ") or line == ">":
-                narr_lines.append(line[2:] if line.startswith("> ") else "")
-            else:
-                content_lines.append(line)
-        if narr_lines and not narrative_text:
-            narrative_text = " ".join(narr_lines).strip()
-        text_clean = "\n".join(content_lines)
+        text_clean, narr_from_quotes = split_slide_content_and_narrative(text_clean)
+        if narr_from_quotes and not narrative_text:
+            narrative_text = narr_from_quotes
 
         title, body_html = slide_title_and_body(text_clean)
         body_html = rewrite_theme_img_src(body_html, td)
@@ -687,37 +741,37 @@ body {{ font-family: {font}; }}
                 body_area = f"""<div class="slide-body-area" style="justify-content:center;padding-left:20mm;padding-right:{pr};">
                     <div class="rule cover-rule"></div>
                     <div class="cover-title-light">{title}</div>
-                    <div class="subtitle-light">{body_html}</div>
+                    <div class="subtitle-light md-rich">{body_html}</div>
                 </div>"""
             else:
                 body_area = f"""<div class="slide-body-area" style="justify-content:center;padding-left:20mm;padding-right:{pr};">
                     <div class="rule cover-rule"></div>
                     <div class="cover-title">{title}</div>
-                    <div class="subtitle">{body_html}</div>
+                    <div class="subtitle md-rich">{body_html}</div>
                 </div>"""
         elif layout == "divider":
             if body_light:
                 body_area = f"""<div class="slide-body-area" style="align-items:center;text-align:center;padding-right:{pr};">
                     <div class="rule" style="margin:0 auto 5mm auto;width:20mm;"></div>
                     <div class="divider-title-light">{title}</div>
-                    <div class="subtitle-light" style="text-align:center;margin-top:4mm;">{body_html}</div>
+                    <div class="subtitle-light md-rich" style="text-align:center;margin-top:4mm;">{body_html}</div>
                 </div>"""
             else:
                 body_area = f"""<div class="slide-body-area" style="align-items:center;text-align:center;padding-right:{pr};">
                     <div class="rule" style="margin:0 auto 5mm auto;width:20mm;"></div>
                     <div class="divider-title">{title}</div>
-                    <div class="subtitle" style="text-align:center;margin-top:4mm;">{body_html}</div>
+                    <div class="subtitle md-rich" style="text-align:center;margin-top:4mm;">{body_html}</div>
                 </div>"""
         elif body_light:
             body_area = f"""<div class="slide-body-area" style="padding-right:{pr};">
                 <div class="slide-title-light">{title}</div>
-                <div class="body-text-light">{body_html}</div>
+                <div class="body-text-light md-rich">{body_html}</div>
             </div>"""
         else:
             body_area = f"""<div class="slide-body-area" style="padding-right:{pr};">
                 <div class="slide-title">{title}</div>
                 <div class="rule"></div>
-                <div class="body-text">{body_html}</div>
+                <div class="body-text md-rich">{body_html}</div>
             </div>"""
 
         return f'<div class="{slide_cls} s{i}">{narr_html}{body_area}{footer}</div>'
@@ -760,7 +814,7 @@ def convert(md_path, output_path=None, mode_override=None, with_narrative=False,
         title, body_md = extract_title(content)
         title   = strip_escapes(title)
         body_md = strip_escapes(body_md)
-        body_html = markdown.markdown(body_md, extensions=["tables","fenced_code","attr_list","nl2br"])
+        body_html = md_rich.markdown_to_rich_html(body_md)
         html = build_document_html(title, body_html, theme_name, sensitivity, td=td, word_friendly=word_friendly)
 
     if output_format == "pdf":
