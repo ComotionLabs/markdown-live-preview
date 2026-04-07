@@ -22,6 +22,7 @@ Without an efficient preview mechanism, teams often experience a frustrating cyc
 - Copy to Word functionality with formatting preserved
 - PDF export with headers and footers
 - **Claude skill** for branded PDF, Word (HTML), and .docx export: [claude_skills/md-document/](claude_skills/md-document/) (themes, script, tests)
+- **Mermaid diagrams** and **Chart.js charts** via fenced code blocks (languages `mermaid` and `chart`); live preview loads Mermaid and Chart.js from a CDN; the Claude skill can embed static SVG/PNG for PDF exports (see [claude_skills/md-document/README.md](claude_skills/md-document/README.md))
 - Clean, responsive UI
 - Error handling and connection status indicators
 

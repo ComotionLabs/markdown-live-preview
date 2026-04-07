@@ -212,3 +212,19 @@ def test_split_slide_keeps_alerts_in_content():
     assert "[!TIP]" in content
     assert "On slide" in content
     assert "Speaker only" in narr
+
+
+def test_embed_diagrams_skips_when_offline():
+    import diagram_embed as de
+
+    frag = '<pre><code class="language-mermaid">graph TD;A-->B</code></pre>'
+    assert de.embed_diagrams_in_html(frag, fetch_online=False) == frag
+
+
+def test_markdown_rich_keeps_mermaid_fence_when_fetch_disabled(monkeypatch):
+    monkeypatch.setenv("MD_DIAGRAM_FETCH", "0")
+    import markdown_rich as mr
+
+    html = mr.markdown_to_rich_html("```mermaid\ngraph LR\n  a --> b\n```\n")
+    assert "language-mermaid" in html
+    assert "graph LR" in html

@@ -79,6 +79,27 @@ Discovery | Analysis | Strategy | Action
 
 ---
 
+## Diagrams and charts
+
+```mermaid
+flowchart LR
+  A[Input] --> B[Process]
+  B --> C[Output]
+```
+
+```chart
+{
+  "type": "bar",
+  "data": {
+    "labels": ["Q1", "Q2", "Q3"],
+    "datasets": [{ "label": "Revenue", "data": [12, 19, 14] }]
+  },
+  "options": { "plugins": { "legend": { "display": true } } }
+}
+```
+
+---
+
 ## Thank You
 
 Questions and discussion.

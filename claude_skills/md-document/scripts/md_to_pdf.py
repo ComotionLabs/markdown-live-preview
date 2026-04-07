@@ -22,6 +22,7 @@ except ImportError:
     import markdown
 
 import markdown_rich as md_rich
+import diagram_embed
 
 try:
     import weasyprint
@@ -300,7 +301,11 @@ def build_document_html(title, body_html, theme_name, sensitivity, td=None, word
     logo_html  = f'<img src="{logo_uri}" alt="{t.get("logoAlt","")}" style="max-height:40px;max-width:260px;display:block;margin-bottom:8px;">' if logo_uri else ""
     gfonts_tag = f'<link rel="stylesheet" href="{gfonts}">' if gfonts else ""
     mt, mr, mb, ml = mg.get("top","22mm"), mg.get("right","18mm"), mg.get("bottom","22mm"), mg.get("left","18mm")
-    rich_skin = md_rich.build_root_theme_vars_css(t) + md_rich.RICH_ELEMENTS_CSS
+    rich_skin = (
+        md_rich.build_root_theme_vars_css(t)
+        + md_rich.RICH_ELEMENTS_CSS
+        + diagram_embed.DIAGRAM_CSS
+    )
 
     if word_friendly:
         # Word-openable HTML: no @page, no running headers, no CSS counters.
@@ -452,7 +457,11 @@ def build_presentation_html(content, theme_name, sensitivity, with_narrative=Fal
     has_images  = len(backgrounds) > 0
 
     gfonts_tag  = f'<link rel="stylesheet" href="{gfonts}">' if gfonts else ""
-    rich_skin = md_rich.build_root_theme_vars_css(t) + md_rich.RICH_ELEMENTS_CSS
+    rich_skin = (
+        md_rich.build_root_theme_vars_css(t)
+        + md_rich.RICH_ELEMENTS_CSS
+        + diagram_embed.DIAGRAM_CSS
+    )
 
     # Split slides on --- separator
     raw_slides  = re.split(r'\n---\n', content)

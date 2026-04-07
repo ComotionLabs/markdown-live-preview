@@ -53,8 +53,15 @@ def _kroki_mermaid_svg(source: str) -> str | None:
 
 
 def _quickchart_png(config_obj: dict) -> bytes | None:
+    # QuickChart expects `chart` as JSON string; version 4 matches browser Chart.js 4 configs
     body = json.dumps(
-        {"chart": config_obj, "width": 640, "height": 400, "format": "png"},
+        {
+            "chart": json.dumps(config_obj, separators=(",", ":")),
+            "width": 640,
+            "height": 400,
+            "format": "png",
+            "version": "4",
+        },
         separators=(",", ":"),
     ).encode("utf-8")
     try:

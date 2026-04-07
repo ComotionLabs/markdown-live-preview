@@ -973,15 +973,31 @@ app.get('/export/pdf', async (req, res) => {
     await page.setViewport({ width: 1200, height: 800 });
     
     await page.emulateMediaType('print');
+
+    await page.waitForFunction(
+      () => {
+        const el = document.getElementById('doc-content');
+        if (!el) return false;
+        const t = (el.textContent || '').trim();
+        return t.length > 0 && t !== 'Loading...';
+      },
+      { timeout: 20000 }
+    );
     
     // Wait for fonts and images to load
     await page.evaluate(() => document.fonts && document.fonts.ready ? document.fonts.ready : null);
+
+    await page.evaluate(async () => {
+      if (typeof window.__renderDocDiagrams === 'function') {
+        await window.__renderDocDiagrams();
+      }
+    });
     
     // Let layout fully settle across two frames
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     
-    // Additional wait to ensure everything is rendered
-    await new Promise((r) => setTimeout(r, 500));
+    // Mermaid / Chart.js need extra time for SVG/canvas
+    await new Promise((r) => setTimeout(r, 1200));
     const marginTop = normalizeMm(pdfTheme.printMargins.top, 15);
     const marginRight = normalizeMm(pdfTheme.printMargins.right, 15);
     const marginBottom = normalizeMm(pdfTheme.printMargins.bottom, 15);
@@ -1337,7 +1353,7 @@ app.get('/', (req, res) => {
           destroyChartJsInstances();
           upgradeMermaidBlocks(root);
           upgradeChartBlocks(root);
-          if (typeof mermaid !== 'undefined') {
+          if (typeof mermaid !== 'undefined' && root.querySelector('.mermaid')) {
             try {
               if (!mermaidInitialized) {
                 mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'neutral' });
