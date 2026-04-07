@@ -167,3 +167,48 @@ def test_convert_presentation_pdf():
         assert result == out
         assert os.path.isfile(out)
         assert os.path.getsize(out) > 100
+
+
+# ── markdown_rich (parity with live preview server.js) ──────────────────────
+
+def test_markdown_rich_callout_and_flow():
+    import markdown_rich as mr
+
+    html = mr.markdown_to_rich_html(
+        "> [!NOTE]\n> Alert body.\n\n:::flow\nA | B\n:::\n"
+    )
+    assert 'class="callout callout-note"' in html
+    assert "Alert body." in html
+    assert "flow-block" in html
+    assert "flow-item" in html
+
+
+def test_markdown_rich_stat_and_columns():
+    import markdown_rich as mr
+
+    md = """:::stat
+# 99%
+Subtitle here
+:::
+
+:::columns
+Left **bold**
+|||
+Right
+:::
+"""
+    html = mr.markdown_to_rich_html(md)
+    assert "stat-block" in html
+    assert "99%" in html
+    assert "columns-block" in html
+    assert "columns-left" in html
+    assert "columns-right" in html
+
+
+def test_split_slide_keeps_alerts_in_content():
+    content, narr = m2p.split_slide_content_and_narrative(
+        "## Title\n\n> [!TIP]\n> On slide\n\n> Speaker only\n"
+    )
+    assert "[!TIP]" in content
+    assert "On slide" in content
+    assert "Speaker only" in narr

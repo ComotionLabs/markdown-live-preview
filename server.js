@@ -341,7 +341,7 @@ function loadTheme(themeName) {
         coverBorderBottomWidth: "6px",
         titleRuleHeight: "5px",
         titleRuleOpacity: 0.5,
-        titleSubheadingColor: "#5a6f86",
+        titleSubheadingColor: "#203d5c",
         sensitivityLevels: {
           Public: { bg: "#E6E6E6", fg: "#051F4C" },
           Internal: { bg: "#E6E6E6", fg: "#051F4C" },
@@ -567,6 +567,19 @@ function buildPresentationElementsCss() {
             #doc-content .stat-block,
             #doc-content .flow-block,
             #doc-content .columns-block { break-inside: avoid; }
+        }
+    `;
+}
+
+function buildDiagramElementsCss() {
+  return `
+        #doc-content .md-diagram { margin: 1.25rem 0; text-align: center; }
+        #doc-content .md-mermaid-svg svg { max-width: 100%; height: auto; display: inline-block; vertical-align: middle; }
+        #doc-content .md-chart-wrap { margin: 1.25rem 0; max-width: 100%; overflow-x: auto; text-align: center; }
+        #doc-content .md-chart-wrap canvas { max-width: 100%; height: auto !important; }
+        @media print {
+            #doc-content .md-diagram,
+            #doc-content .md-chart-wrap { break-inside: avoid; }
         }
     `;
 }
@@ -1091,6 +1104,7 @@ app.get('/', (req, res) => {
     <style>
         ${buildRootThemeVarsCss(theme)}
         ${buildPresentationElementsCss()}
+        ${buildDiagramElementsCss()}
         body {
             font-family: ${theme.fontFamily};
             font-size: ${theme.bodyFontSize};
@@ -1121,7 +1135,13 @@ app.get('/', (req, res) => {
         .doc-theme-brand { display: ${theme.logoSrc ? 'block' : 'none'}; }
         .doc-theme-logo { height: ${theme.logoHeight || '44px'}; }
         .doc-title { font-family: ${theme.fontFamily}; font-size: ${theme.titleFontSize}; font-weight: 700; margin: 24px 0 6px; line-height: 1.2; clear: both; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
-        ${theme.titleSubheadingColor ? `#doc-content > p:first-of-type { color: ${theme.titleSubheadingColor}; }` : ''}
+        ${(() => {
+          const sub = (theme.titleSubheadingColor && String(theme.titleSubheadingColor).trim()) || (theme.bodyColor && String(theme.bodyColor).trim()) || '';
+          if (!sub) return '';
+          return `#doc-content > p:first-of-type { color: ${sub}; font-weight: 500; }
+        #doc-content > p:first-of-type em,
+        #doc-content > p:first-of-type i { color: inherit; }`;
+        })()}
         #doc-content h1 { font-family: ${theme.fontFamily}; font-size: ${theme.h1FontSize}; font-weight: ${theme.h1FontWeight || '700'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
         #doc-content h2 { font-family: ${theme.fontFamily}; font-size: ${theme.h2FontSize}; font-weight: ${theme.h2FontWeight || '400'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
         #doc-content h3 { font-family: ${theme.fontFamily}; font-size: ${theme.h3FontSize}; font-weight: ${theme.h3FontWeight || '400'}; ${theme.headingColor ? `color: ${theme.headingColor};` : ''} }
@@ -1244,6 +1264,8 @@ app.get('/', (req, res) => {
     </div>
     ${theme.printFooterEnabled ? `<div class="print-footer"><span class="footer-label">${theme.printFooterLabel} </span><span class="page-numbers"></span></div>` : ''}
 
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
@@ -1266,6 +1288,68 @@ app.get('/', (req, res) => {
         if (params.get('pdf') === '1') {
           document.body.classList.add('pdf-mode');
         }
+
+        let mermaidInitialized = false;
+        let chartJsInstances = [];
+        function destroyChartJsInstances() {
+          chartJsInstances.forEach(function (ch) {
+            try { ch.destroy(); } catch (e) {}
+          });
+          chartJsInstances = [];
+        }
+        function upgradeMermaidBlocks(root) {
+          if (!root) return;
+          Array.from(root.querySelectorAll('pre code.language-mermaid')).forEach(function (code) {
+            const pre = code.parentElement;
+            if (!pre || pre.tagName !== 'PRE') return;
+            const div = document.createElement('div');
+            div.className = 'mermaid';
+            div.textContent = (code.textContent || '').trim();
+            pre.replaceWith(div);
+          });
+        }
+        function upgradeChartBlocks(root) {
+          if (!root || typeof Chart === 'undefined') return;
+          Array.from(root.querySelectorAll('pre code.language-chart')).forEach(function (code) {
+            const pre = code.parentElement;
+            if (!pre || pre.tagName !== 'PRE') return;
+            let cfg;
+            try {
+              cfg = JSON.parse((code.textContent || '').trim());
+            } catch (e) {
+              return;
+            }
+            const wrap = document.createElement('div');
+            wrap.className = 'md-chart-wrap';
+            const cvs = document.createElement('canvas');
+            wrap.appendChild(cvs);
+            pre.replaceWith(wrap);
+            try {
+              chartJsInstances.push(new Chart(cvs, cfg));
+            } catch (e) {
+              console.warn('Chart.js:', e);
+            }
+          });
+        }
+        async function renderDocDiagrams() {
+          const root = document.getElementById('doc-content');
+          if (!root) return;
+          destroyChartJsInstances();
+          upgradeMermaidBlocks(root);
+          upgradeChartBlocks(root);
+          if (typeof mermaid !== 'undefined') {
+            try {
+              if (!mermaidInitialized) {
+                mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'neutral' });
+                mermaidInitialized = true;
+              }
+              await mermaid.run({ querySelector: '#doc-content .mermaid' });
+            } catch (e) {
+              console.warn('Mermaid:', e);
+            }
+          }
+        }
+        window.__renderDocDiagrams = renderDocDiagrams;
 
         function updateDocHeader(meta, t) {
             t = t || {};
@@ -1321,6 +1405,7 @@ app.get('/', (req, res) => {
                 updateDocHeader(meta || {}, currentTheme);
             }
             errorDiv.style.display = 'none';
+            void renderDocDiagrams().catch(function (e) { console.warn(e); });
         });
 
         socket.on('error', (error) => {
@@ -1420,8 +1505,16 @@ app.get('/', (req, res) => {
           const bodyCol = t.bodyColor ? 'color:' + t.bodyColor + ';' : '';
           const titleCol = t.headingColor ? 'color:' + t.headingColor + ';' : '';
           const h1c = t.headingColor ? 'color:' + t.headingColor + ';' : '';
-          const subCol = t.titleSubheadingColor || '';
-          const subRule = subCol ? '#doc-content > p:first-of-type{color:' + subCol + ';}' : '';
+          const subCol =
+            (t.titleSubheadingColor && String(t.titleSubheadingColor).trim()) ||
+            (t.bodyColor && String(t.bodyColor).trim()) ||
+            '';
+          const subRule = subCol
+            ? '#doc-content > p:first-of-type{color:' +
+              subCol +
+              ';font-weight:500;}' +
+              '#doc-content > p:first-of-type em,#doc-content > p:first-of-type i{color:inherit;}'
+            : '';
           const logoH = t.logoHeight || '';
           const logoRule = logoH ? '.doc-theme-logo{height:' + logoH + ';}' : '';
           return [

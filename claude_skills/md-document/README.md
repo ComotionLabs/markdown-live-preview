@@ -25,6 +25,10 @@ python3 scripts/md_to_pdf.py input.md [output.docx] --format docx --themes-dir t
 
 From the skill directory (`claude_skills/md-document`), omit `--themes-dir` to use the bundled `themes/` automatically when running the script from this repo.
 
+## Rich markdown (same as live preview)
+
+The skill uses `scripts/markdown_rich.py` with the **same syntax** as the Node markdown-live-preview app: GitHub-style callouts (`> [!NOTE]`, `> [!TIP]`, …), fenced blocks `:::stat` / `:::flow` / `:::columns` (column divider line `|||`), and styled blockquotes. Document and presentation exports both run this pipeline. In presentation mode, lines starting with `> ` still become speaker notes **except** alert lines (`> [!…]`) and pull quotes (`> "…`), which stay on the slide.
+
 ## Dependencies
 
 - **Python 3** with `pip install -r requirements.txt` (markdown, weasyprint for PDF).

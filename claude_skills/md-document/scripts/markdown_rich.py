@@ -12,6 +12,8 @@ from typing import Callable
 
 import markdown
 
+from diagram_embed import embed_diagrams_in_html
+
 # Keep in sync with md_to_pdf.py usage
 MD_EXTENSIONS = ["tables", "fenced_code", "attr_list", "nl2br"]
 
@@ -278,4 +280,5 @@ def markdown_to_rich_html(text: str) -> str:
         return ""
     md = preprocess_custom_blocks(raw, parse_inner)
     out = markdown.markdown(md, extensions=MD_EXTENSIONS)
-    return postprocess_github_callouts(out)
+    out = postprocess_github_callouts(out)
+    return embed_diagrams_in_html(out)
