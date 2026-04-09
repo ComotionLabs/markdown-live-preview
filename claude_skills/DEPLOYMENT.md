@@ -41,6 +41,8 @@ From the repository root:
 
 Deployment builds the skill and publishes it as a Git artifact so others can download it without building locally.
 
+**Version tags and GitHub Releases (policy, manual releases, permissions):** see [RELEASING.md](../RELEASING.md) in the repository root.
+
 ### Automated deployment (GitHub Actions)
 
 #### One-time: approval gate for releases
