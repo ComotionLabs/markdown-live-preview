@@ -1,6 +1,6 @@
 # Markdown Document & Presentation Skill
 
-Convert themed Markdown to **PDF**, **Word (HTML)**, or **.docx** using `scripts/md_to_pdf.py`. Header numbering in Word is theme-defined and uses Word's native numbering system. See [SKILL.md](SKILL.md) for the agent workflow and [references/themes.md](references/themes.md) for theme configuration.
+Convert themed Markdown to **PDF**, **Word (HTML)**, or **.docx** using `scripts/md_to_pdf.py`, and to **branded native .docx** (pandoc reference templates) using `scripts/md_to_docx.py`. Header numbering in Word (HTML) is theme-defined and uses Word's native numbering system. See [SKILL.md](SKILL.md) for the agent workflow and [references/themes.md](references/themes.md) for theme configuration.
 
 ## Output formats
 
@@ -8,7 +8,8 @@ Convert themed Markdown to **PDF**, **Word (HTML)**, or **.docx** using `scripts
 |--------|------|--------|-------|
 | PDF | `--format pdf` (default) | `.pdf` | WeasyPrint; requires `markdown`, `weasyprint` |
 | Word (HTML) | `--format word` | `.html` | Open in Microsoft Word |
-| .docx | `--format docx` | `.docx` | Requires **pandoc** on PATH |
+| .docx (branded) | `md_to_docx.py` | `.docx` | Pandoc + `templates/*-reference.docx`; requires **pandoc** |
+| .docx (legacy) | `--format docx` | `.docx` | HTML round-trip via `md_to_pdf.py`; requires **pandoc** |
 
 ## Usage
 
@@ -19,7 +20,10 @@ python3 scripts/md_to_pdf.py input.md [output.pdf] --themes-dir themes
 # Word-openable HTML
 python3 scripts/md_to_pdf.py input.md [output.html] --format word --themes-dir themes
 
-# Native .docx (requires pandoc)
+# Branded native .docx (recommended; requires pandoc)
+python3 scripts/md_to_docx.py input.md [output.docx] --themes-dir themes
+
+# Legacy .docx — HTML round-trip (requires pandoc)
 python3 scripts/md_to_pdf.py input.md [output.docx] --format docx --themes-dir themes
 ```
 
@@ -34,7 +38,7 @@ The skill uses `scripts/markdown_rich.py` with the **same syntax** as the Node m
 ## Dependencies
 
 - **Python 3** with `pip install -r requirements.txt` (markdown, weasyprint for PDF).
-- **pandoc** for `--format docx`: install from [pandoc.org](https://pandoc.org/installing.html) and ensure it is on PATH.
+- **pandoc** for `.docx` output (`md_to_docx.py` or `--format docx`): install from [pandoc.org](https://pandoc.org/installing.html) and ensure it is on PATH.
 
 ## Testing
 

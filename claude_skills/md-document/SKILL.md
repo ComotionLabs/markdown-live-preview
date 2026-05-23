@@ -1,13 +1,13 @@
 ---
 name: md-document
-description: "Use when creating or editing Markdown for professional output: reports, memos, proposals, briefs, guides, SOWs, policies, or presentation decks. Modes: document (multi-page) and presentation (16:9 slides). Output: PDF (default), Word (.html via --format word, opens in Word), or .docx (--format docx, requires pandoc). Trigger for document/presentation requests, 'Word document' or 'HTML for Word', and when themes (comotion, comotion-ai, seedanalytics) or sensitivity (public, internal, confidential, secret) are mentioned. Creates .md and generates branded PDF/Word/.docx. Do not use for code, READMEs, or casual snippets."
+description: "Use when creating or editing Markdown for professional output: reports, memos, proposals, briefs, guides, SOWs, policies, or presentation decks. Modes: document (multi-page) and presentation (16:9 slides). Output: PDF (default), Word (.html via --format word), branded native .docx (scripts/md_to_docx.py + pandoc), or legacy .docx via md_to_pdf --format docx (HTML round-trip, not reference-branded). Trigger: document/presentation requests; 'Word document', 'HTML for Word', 'native Word', '.docx', or send in Word; themes (comotion, comotion-ai, seedanalytics) or sensitivity. Do not use for code, READMEs, or casual snippets."
 ---
 
 # Markdown Document & Presentation Skill
 
-Create professional `.md` files rendered as branded, themed **PDF**, **Word (HTML)**, or **.docx** via `scripts/md_to_pdf.py`. All logos, backgrounds, and theme configs are bundled under `themes/`.
+Create professional `.md` files rendered as branded, themed **PDF**, **Word (HTML)**, or **native .docx** via `scripts/md_to_pdf.py` and, for **branded** Word output, `scripts/md_to_docx.py`. Logos, backgrounds, and theme configs live under `themes/`; pandoc **reference** `.docx` templates live under `templates/`.
 
-**Output formats:** PDF (default) | **Word document** — use `--format word` to generate an `.html` file that opens in Microsoft Word (theme styling and heading structure preserved; no pandoc required) | .docx — use `--format docx` for native Word (requires pandoc on PATH).
+**Output formats:** PDF (default) | **Word (HTML)** — `--format word` produces `.html` for Microsoft Word (no pandoc) | **Branded native .docx** — `scripts/md_to_docx.py` (pandoc + `templates/<theme>-reference.docx`: header logo, footer sensitivity + page numbers) | **Legacy .docx** — `md_to_pdf.py --format docx` converts rendered HTML through pandoc without a reference document (quick but not template-branded).
 
 Two content modes:
 - **document** — multi-page report/memo/proposal (default)
@@ -20,7 +20,7 @@ Two content modes:
 1. **Ask** for theme and sensitivity if not provided
 2. **For presentations** — also ask: *"Should I include a speaker notes panel?"*
 3. **Write** the `.md` file with correct frontmatter
-4. **Generate PDF, Word (HTML), or .docx** via bash_tool (see Generation section)
+4. **Generate PDF, Word (HTML), or native .docx** via bash_tool (see Generation section)
 5. **Copy** `.md` and the generated file (`.pdf`, `.html`, or `.docx`) to `/mnt/user-data/outputs/` and present them
 
 ---
@@ -230,7 +230,7 @@ To add backgrounds to a theme: drop PNG/JPG into `themes/<theme>/assets/` — pi
 
 ## PDF, Word, and .docx Generation
 
-You can produce **Word-openable HTML** for any document: run the script with `--format word` and an output path ending in `.html`. The result is a single HTML file that the user opens in Microsoft Word; it is fully styled (theme colours, fonts, logo, sensitivity badge) and uses semantic headings so Word can apply its native heading numbering. **No pandoc is required for Word (HTML).** Use `--format pdf` (default), `--format word`, or `--format docx`. For native `.docx`, **pandoc** must be on PATH.
+You can produce **Word-openable HTML** for any document: run the script with `--format word` and an output path ending in `.html`. The result is a single HTML file that the user opens in Microsoft Word; it is fully styled (theme colours, fonts, logo, sensitivity badge) and uses semantic headings so Word can apply its native heading numbering. **No pandoc is required for Word (HTML).** Use `--format pdf` (default) or `--format word` from `md_to_pdf.py`. For **native `.docx`**, use **`md_to_docx.py`** (branded, recommended) or **`md_to_pdf.py --format docx`** (HTML round-trip, not reference-branded); both need **pandoc** on PATH.
 
 ### Document mode — PDF (default)
 
@@ -253,9 +253,28 @@ python3 /mnt/skills/user/md-document/scripts/md_to_pdf.py \
   --themes-dir /mnt/skills/user/md-document/themes
 ```
 
-### Document mode — .docx (native)
+### Document mode — .docx (branded, recommended)
 
-Requires **pandoc** installed and on PATH. Produces a native Word document.
+Requires **pandoc** on PATH. Uses theme-specific reference documents in `templates/` (header logo, styles, footer with sensitivity + “Page X of Y”). Reads `theme` and `sensitivity` from frontmatter (defaults match `md_to_pdf.py`: `comotion`, `internal`). Optional `--sensitivity` overrides the footer label.
+
+```bash
+python3 /mnt/skills/user/md-document/scripts/md_to_docx.py \
+  /home/claude/my-document.md \
+  /mnt/user-data/outputs/my-document.docx \
+  --themes-dir /mnt/skills/user/md-document/themes
+```
+
+Validate reference templates after regenerating: `python3 scripts/office/validate.py templates/comotion-reference.docx`.
+
+**Regenerate `templates/*.docx`** (maintainers): from repo root, `node claude_skills/md-document/scripts/build_reference_docs.js` (needs `pandoc`, `unzip`, `docx` npm package, and `rsvg-convert` or `cairosvg` / `inkscape` for SVG→PNG).
+
+Fenced code blocks use pandoc’s **SourceCode** paragraph style in Word; reference docs also define **CodeBlock**, **TableHeader**, and **TableBody** for custom-style use.
+
+**Limitations (native Word):** no background images or full-bleed covers like PDF/presentation mode; font substitution depends on the reader’s installed fonts.
+
+### Document mode — .docx (legacy, HTML round-trip)
+
+`md_to_pdf.py --format docx` writes the same themed HTML as PDF, then runs pandoc **without** `--reference-doc`. Use only when you need a quick `.docx` without the branded template.
 
 ```bash
 python3 /mnt/skills/user/md-document/scripts/md_to_pdf.py \
@@ -286,7 +305,7 @@ python3 /mnt/skills/user/md-document/scripts/md_to_pdf.py \
 
 Mode is read from frontmatter `mode:` automatically. Override with `--mode presentation` if needed.
 
-**Dependencies:** `markdown` and `weasyprint` (PDF); **pandoc** for `--format docx`. Python deps auto-installed if missing.
+**Dependencies:** `markdown` and `weasyprint` (PDF); **pandoc** for `.docx` (both `md_to_docx.py` and `--format docx`). Python deps auto-installed if missing.
 
 ---
 
@@ -308,6 +327,10 @@ When the user asks for a "Comotion group" or "all brands" overview, use the **co
 ## Bundled Assets
 
 ```
+templates/
+  comotion-reference.docx
+  comotion-ai-reference.docx
+  seedanalytics-reference.docx
 themes/
   comotion/
     theme.json

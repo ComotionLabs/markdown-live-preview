@@ -8,7 +8,7 @@ Supports two modes via frontmatter:
 Output formats (--format):
   pdf   - WeasyPrint PDF (default)
   word  - Word-openable HTML (theme-driven; Word native header numbering)
-  docx  - Native .docx via pandoc (requires pandoc on PATH)
+  docx  - Native .docx via pandoc HTML round-trip (requires pandoc; not branded — use md_to_docx.py for reference-doc output)
 
 Usage:
   python3 md_to_pdf.py input.md [output.pdf|output.html|output.docx] --format pdf|word|docx --themes-dir /path/to/themes
@@ -170,6 +170,21 @@ def extract_title(md):
             rest.append(line)
     return title, "\n".join(rest)
 
+# Backslash + ASCII punctuation or space → drop the backslash (authoring cleanup before markdown).
+# Matches GFM/CommonMark escapable ASCII; repeated until stable so doubled backslashes (e.g. \\~)
+# from tooling/LLMs do not leave a stray \ in the PDF (python-markdown leaves \~ literal).
+_STRIP_ESC_LINE = re.compile(r"\\([\x20\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e])")
+
+
+def _strip_escapes_line(line):
+    s = line
+    while True:
+        ns = _STRIP_ESC_LINE.sub(r"\1", s)
+        if ns == s:
+            return s
+        s = ns
+
+
 def strip_escapes(text):
     lines, result, in_code = text.split("\n"), [], False
     for line in lines:
@@ -179,7 +194,7 @@ def strip_escapes(text):
         elif in_code:
             result.append(line)
         else:
-            result.append(re.sub(r'\\([~*_#>\|!\-\[\]`{}()+.])', r'\1', line))
+            result.append(_strip_escapes_line(line))
     return "\n".join(result)
 
 
@@ -835,7 +850,7 @@ def convert(md_path, output_path=None, mode_override=None, with_narrative=False,
             f.write(html)
         return output_path
 
-    # docx: write HTML to temp file, run pandoc, remove temp
+    # docx: HTML round-trip (no reference doc). For branded native Word, use scripts/md_to_docx.py.
     fd, html_path = tempfile.mkstemp(suffix=".html", prefix="md2docx_")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:

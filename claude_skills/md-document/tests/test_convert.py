@@ -49,6 +49,22 @@ def test_extract_title():
     assert "# Section" in rest
 
 
+def test_strip_escapes_single_and_doubled():
+    assert m2p.strip_escapes(r"foo \~ bar") == "foo ~ bar"
+    assert m2p.strip_escapes(r"foo \* bar") == "foo * bar"
+    # Doubled backslash (common in model output) must not leave `\` in text for markdown to print literally
+    assert m2p.strip_escapes(r"a \\~ b") == "a ~ b"
+    assert m2p.strip_escapes(r"\\~") == "~"
+
+
+def test_strip_escapes_preserves_fenced_code():
+    md = "```\npath\\\\to\\\\file\n\\~\n```\n\nLine \\~ two\n"
+    out = m2p.strip_escapes(md)
+    assert "path\\\\to\\\\file" in out
+    assert "\\~" in out.split("```")[1]
+    assert "Line ~ two" in out
+
+
 # ── Document mode HTML ──────────────────────────────────────────────────────
 
 def test_build_document_html_pdf_has_counters():
@@ -99,6 +115,29 @@ def test_convert_word():
         content = open(out, encoding="utf-8").read()
         assert "Minimal Document Title" in content
         assert "First Section" in content
+
+
+@pytest.mark.skipif(not m2p.pandoc_available(), reason="pandoc not on PATH")
+def test_md_to_docx_branded():
+    """Branded native .docx via pandoc reference templates (md_to_docx.py)."""
+    import subprocess
+
+    md_path = os.path.join(SCENARIOS_DIR, "minimal_doc.md")
+    if not os.path.exists(md_path):
+        pytest.skip("scenarios/minimal_doc.md not found")
+    script = os.path.join(TESTS_DIR, "..", "scripts", "md_to_docx.py")
+    if not os.path.isfile(script):
+        pytest.skip("md_to_docx.py not found")
+    with tempfile.TemporaryDirectory() as tmp:
+        out = os.path.join(tmp, "branded.docx")
+        r = subprocess.run(
+            [sys.executable, script, md_path, out, "--themes-dir", THEMES_DIR],
+            capture_output=True,
+            text=True,
+        )
+        assert r.returncode == 0, r.stderr
+        assert os.path.isfile(out)
+        assert os.path.getsize(out) > 1000
 
 
 @pytest.mark.skipif(not m2p.pandoc_available(), reason="pandoc not on PATH")
