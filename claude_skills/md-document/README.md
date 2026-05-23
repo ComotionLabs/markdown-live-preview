@@ -2,6 +2,10 @@
 
 Convert themed Markdown to **PDF**, **Word (HTML)**, or **.docx** using `scripts/md_to_pdf.py`, and to **branded native .docx** (pandoc reference templates) using `scripts/md_to_docx.py`. Header numbering in Word (HTML) is theme-defined and uses Word's native numbering system. See [SKILL.md](SKILL.md) for the agent workflow and [references/themes.md](references/themes.md) for theme configuration.
 
+## Install for Cursor
+
+To use this skill across all Cursor projects, install it as a personal skill at `~/.cursor/skills/md-document/`. Download `md-document.skill` from a GitHub Release or build locally, then follow **[Install for Cursor](../DEPLOYMENT.md#install-for-cursor-personal-skill)** in [DEPLOYMENT.md](../DEPLOYMENT.md).
+
 ## Output formats
 
 | Format | Flag | Output | Notes |
