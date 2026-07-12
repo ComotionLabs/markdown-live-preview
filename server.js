@@ -749,11 +749,13 @@ function extractMetadata(markdown) {
         const val = m[2].trim();
         if (key === 'sensitivity') meta.sensitivity = val;
         if (key === 'theme') meta.theme = val;
+        if (key === 'orientation') meta.orientation = val.toLowerCase();
+        if (key === 'mode') meta.mode = val.toLowerCase();
       }
     });
     return meta;
   }
-  // Simple inline tag fallback: "Sensitivity: Level" or "Theme: themename" near top
+  // Simple inline tag fallback near top
   const firstLines = markdown.split(/\r?\n/).slice(0, 15);
   for (const line of firstLines) {
     const sensitivityMatch = line.match(/^sensitivity\s*:\s*(.+)$/i);
@@ -764,8 +766,25 @@ function extractMetadata(markdown) {
     if (themeMatch) {
       meta.theme = themeMatch[1].trim();
     }
+    const orientationMatch = line.match(/^orientation\s*:\s*(.+)$/i);
+    if (orientationMatch) {
+      meta.orientation = orientationMatch[1].trim().toLowerCase();
+    }
+    const modeMatch = line.match(/^mode\s*:\s*(.+)$/i);
+    if (modeMatch) {
+      meta.mode = modeMatch[1].trim().toLowerCase();
+    }
   }
   return meta;
+}
+
+/** Landscape when orientation: landscape, or mode: presentation (16:9 decks). */
+function isLandscapeMeta(meta) {
+  if (!meta) return false;
+  const orientation = String(meta.orientation || '').toLowerCase();
+  if (orientation === 'landscape') return true;
+  if (orientation === 'portrait') return false;
+  return String(meta.mode || '').toLowerCase() === 'presentation';
 }
 
 function stripSensitivityLines(markdown, meta) {
@@ -834,10 +853,15 @@ function stripInlineMetadataBeforeTitle(markdown, meta) {
   const titleIdx = findTitleIndex(markdown);
   const limit = titleIdx === -1 ? Math.min(lines.length, 30) : titleIdx; // only search a small header area
   
-  // Remove both sensitivity and theme lines
+  // Remove inline metadata lines (frontmatter keys duplicated in body header)
   let i = 0;
   while (i < limit) {
-    if (/^sensitivity\s*:/i.test(lines[i]) || /^theme\s*:/i.test(lines[i])) {
+    if (
+      /^sensitivity\s*:/i.test(lines[i]) ||
+      /^theme\s*:/i.test(lines[i]) ||
+      /^orientation\s*:/i.test(lines[i]) ||
+      /^mode\s*:/i.test(lines[i])
+    ) {
       lines.splice(i, 1);
       // Also remove following blank line if present
       if (i < lines.length && lines[i].trim() === '') {
@@ -945,6 +969,36 @@ if (!puppeteer) {
   console.log('ℹ️  PDF export disabled: install Puppeteer to enable (npm install puppeteer)');
 }
 
+/**
+ * Launch Chromium for PDF export. Avoids Cursor sandbox empty PUPPETEER_CACHE_DIR
+ * and falls back to system Google Chrome when the bundled browser is missing.
+ */
+async function launchPdfBrowser(extra = {}) {
+  if (!puppeteer) throw new Error('puppeteer not installed');
+  // Prefer the real user cache if Cursor pointed us at an empty sandbox cache
+  if (process.env.PUPPETEER_CACHE_DIR && /cursor-sandbox-cache/i.test(process.env.PUPPETEER_CACHE_DIR)) {
+    delete process.env.PUPPETEER_CACHE_DIR;
+  }
+  const baseArgs = ['--no-sandbox', '--disable-dev-shm-usage'];
+  const attempts = [
+    { headless: 'new', args: baseArgs, ...extra },
+    { headless: 'new', channel: 'chrome', args: baseArgs, ...extra },
+  ];
+  const macChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  if (fs.existsSync(macChrome)) {
+    attempts.push({ headless: 'new', executablePath: macChrome, args: baseArgs, ...extra });
+  }
+  let lastErr = null;
+  for (const opts of attempts) {
+    try {
+      return await puppeteer.launch(opts);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('Failed to launch Chrome for PDF export');
+}
+
 app.get('/export/pdf', async (req, res) => {
   if (!puppeteer) {
     res.status(501).send('PDF export requires puppeteer. Install it with: npm install puppeteer');
@@ -964,13 +1018,17 @@ app.get('/export/pdf', async (req, res) => {
     } catch (e) {
       console.warn('Could not read markdown for metadata:', e.message);
     }
-    const browser = await puppeteer.launch({ headless: 'new' });
+    const browser = await launchPdfBrowser();
     const page = await browser.newPage();
     const url = `http://localhost:${CURRENT_PORT}/?pdf=1`;
     await page.goto(url, { waitUntil: 'networkidle0' });
     
-    // Set viewport for consistent rendering
-    await page.setViewport({ width: 1200, height: 800 });
+    // Set viewport for consistent rendering (wider for landscape)
+    const landscape = isLandscapeMeta(meta);
+    await page.setViewport({
+      width: landscape ? 1400 : 1200,
+      height: landscape ? 990 : 800
+    });
     
     await page.emulateMediaType('print');
 
@@ -1016,6 +1074,7 @@ app.get('/export/pdf', async (req, res) => {
       headerTemplate: headerHtml,
       footerTemplate: footerHtml,
       format: 'A4',
+      landscape: landscape,
       preferCSSPageSize: false,  // Changed to false as this can interfere with headers/footers
       scale: 1.0  // Ensure scale is set to 1.0
     });
@@ -1047,7 +1106,7 @@ app.get('/export/pdf-header-only', async (req, res) => {
       meta = extractMetadata(md) || {};
       title = (extractTitleAndContent(md) || {}).title || '';
     } catch (e) {}
-    const browser = await puppeteer.launch({ headless: true, executablePath: (puppeteer.executablePath && puppeteer.executablePath()) || undefined, args: ['--no-sandbox','--disable-dev-shm-usage'] });
+    const browser = await launchPdfBrowser();
     const page = await browser.newPage();
     const content = '<!doctype html><html><head><meta charset="utf-8"><style>@page{margin:22mm 18mm;}body{font-family:sans-serif;}</style></head><body><div>' + 'Test '.repeat(5000) + '</div></body></html>';
     await page.setContent(content, { waitUntil: 'networkidle0' });
@@ -1080,7 +1139,7 @@ app.get('/export/pdf-footer-only', async (req, res) => {
     return;
   }
   try {
-    const browser = await puppeteer.launch({ headless: true, executablePath: (puppeteer.executablePath && puppeteer.executablePath()) || undefined, args: ['--no-sandbox','--disable-dev-shm-usage'] });
+    const browser = await launchPdfBrowser();
     const page = await browser.newPage();
     const content = '<!doctype html><html><head><meta charset="utf-8"><style>@page{margin:22mm 18mm;}body{font-family:sans-serif;}</style></head><body><div>' + 'Test '.repeat(5000) + '</div></body></html>';
     await page.setContent(content, { waitUntil: 'networkidle0' });
@@ -1130,6 +1189,16 @@ app.get('/', (req, res) => {
             line-height: ${theme.lineHeight};
             background-color: #fff;
             ${theme.bodyColor ? `color: ${theme.bodyColor};` : ''}
+            transition: max-width 0.2s ease;
+        }
+        body.orientation-landscape {
+            max-width: 1280px;
+        }
+        body.orientation-landscape .header h1::after {
+            content: " · Landscape";
+            font-weight: 400;
+            color: #6c757d;
+            font-size: 12px;
         }
         .header {
             background: #f8f9fa;
@@ -1234,6 +1303,9 @@ app.get('/', (req, res) => {
         }
         @media print {
             @page { margin: ${theme.printMargins.top} ${theme.printMargins.right} ${theme.printMargins.bottom} ${theme.printMargins.left}; }
+            body.orientation-landscape {
+                max-width: none;
+            }
             .header { display: none !important; }
             body { margin: 0; padding: 0; background: #fff; }
             #doc-content { border: none; padding: 0 0 ${theme.printContentBottomPadding} 0; }
@@ -1390,12 +1462,44 @@ app.get('/', (req, res) => {
             }
         }
 
+        function isLandscapeMeta(meta) {
+            if (!meta) return false;
+            const orientation = String(meta.orientation || '').toLowerCase();
+            if (orientation === 'landscape') return true;
+            if (orientation === 'portrait') return false;
+            return String(meta.mode || '').toLowerCase() === 'presentation';
+        }
+
+        function ensureOrientationStyleEl() {
+            let el = document.getElementById('orientation-style');
+            if (!el) {
+                el = document.createElement('style');
+                el.id = 'orientation-style';
+                document.head.appendChild(el);
+            }
+            return el;
+        }
+
+        function applyOrientation(meta) {
+            const landscape = isLandscapeMeta(meta);
+            document.body.classList.toggle('orientation-landscape', landscape);
+            const el = ensureOrientationStyleEl();
+            const margins = (currentTheme && currentTheme.printMargins) ? currentTheme.printMargins : {
+                top: '22mm', right: '18mm', bottom: '22mm', left: '18mm'
+            };
+            const pageSize = landscape ? 'A4 landscape' : 'A4 portrait';
+            el.textContent = '@media print { @page { size: ' + pageSize + '; margin: ' +
+                (margins.top || '22mm') + ' ' + (margins.right || '18mm') + ' ' +
+                (margins.bottom || '22mm') + ' ' + (margins.left || '18mm') + '; } }';
+        }
+
         socket.on('markdown-update', (payload) => {
             if (typeof payload === 'string') {
                 docContentDiv.innerHTML = payload;
                 docTitleDiv.style.display = 'none';
                 document.title = 'Markdown Live Preview';
                 updateDocHeader({}, currentTheme);
+                applyOrientation({});
             } else {
                 const { html, title, meta, theme: remoteTheme } = payload || {};
                 docContentDiv.innerHTML = html || '';
@@ -1419,6 +1523,7 @@ app.get('/', (req, res) => {
                   if (brand) brand.style.display = remoteTheme.logoSrc ? 'block' : 'none';
                 }
                 updateDocHeader(meta || {}, currentTheme);
+                applyOrientation(meta || {});
             }
             errorDiv.style.display = 'none';
             void renderDocDiagrams().catch(function (e) { console.warn(e); });

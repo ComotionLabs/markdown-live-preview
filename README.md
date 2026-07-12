@@ -20,10 +20,10 @@ Without an efficient preview mechanism, teams often experience a frustrating cyc
 - WebSocket-based updates for instant preview
 - File watching with automatic change detection
 - Copy to Word functionality with formatting preserved
-- PDF export with headers and footers
+- PDF export with headers and footers (A4 portrait or landscape)
 - **Claude skill** for branded PDF, Word (HTML), and .docx export: [claude_skills/md-document/](claude_skills/md-document/) (themes, script, tests)
 - **Mermaid diagrams** and **Chart.js charts** via fenced code blocks (languages `mermaid` and `chart`); live preview loads Mermaid and Chart.js from a CDN; the Claude skill can embed static SVG/PNG for PDF exports (see [claude_skills/md-document/README.md](claude_skills/md-document/README.md))
-- Clean, responsive UI
+- Clean, responsive UI (wider canvas when `orientation: landscape`)
 - Error handling and connection status indicators
 
 ## Prerequisites
@@ -322,10 +322,41 @@ Features:
 - Affects fonts, logos, margins, and PDF headers/footers
 - Both metadata lines are automatically hidden from rendered output
 
+#### Page Orientation (Landscape)
+
+Use landscape for wide content such as org charts and tables.
+
+**YAML frontmatter:**
+```md
+---
+theme: comotion
+sensitivity: confidential
+orientation: landscape
+---
+
+# Your Title
+...
+```
+
+**Inline format:**
+```md
+Orientation: landscape
+
+# Your Title
+...
+```
+
+Behaviour:
+- Preview canvas widens (max-width ~1280px) and shows a **Landscape** hint in the toolbar
+- **Export PDF** uses A4 landscape
+- Browser print uses `@page { size: A4 landscape }`
+- `mode: presentation` also enables landscape (same as the md-document skill’s 16:9 decks)
+- Values: `landscape` or `portrait` (default)
+
 #### Metadata Processing
 
 - Metadata must appear at the very beginning of the document
-- Both `Theme:` and `Sensitivity:` lines are case-insensitive
+- `Theme:`, `Sensitivity:`, `Orientation:`, and `Mode:` lines are case-insensitive
 - Values are trimmed of whitespace
 - Inline metadata lines are removed from the rendered content
 - Empty lines following metadata are also removed for cleaner output

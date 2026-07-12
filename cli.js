@@ -79,13 +79,18 @@ console.log(`Press Ctrl+C to stop\n`);
 
 // Start the server with environment variables
 const serverPath = path.join(__dirname, 'server.js');
+const serverEnv = {
+  ...process.env,
+  MARKDOWN_FILE: absolutePath,
+  PORT: port.toString(),
+  THEME: themeArg || process.env.THEME || ''
+};
+// Cursor sandbox sets PUPPETEER_CACHE_DIR to an empty temp cache; prefer the real user cache.
+if (serverEnv.PUPPETEER_CACHE_DIR && /cursor-sandbox-cache/i.test(serverEnv.PUPPETEER_CACHE_DIR)) {
+  delete serverEnv.PUPPETEER_CACHE_DIR;
+}
 const server = spawn('node', [serverPath], {
-  env: {
-    ...process.env,
-    MARKDOWN_FILE: absolutePath,
-    PORT: port.toString(),
-    THEME: themeArg || process.env.THEME || ''
-  },
+  env: serverEnv,
   stdio: 'inherit'
 });
 
