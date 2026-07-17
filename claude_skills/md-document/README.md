@@ -37,7 +37,7 @@ From the skill directory (`claude_skills/md-document`), omit `--themes-dir` to u
 
 The skill uses `scripts/markdown_rich.py` with the **same syntax** as the Node markdown-live-preview app: GitHub-style callouts (`> [!NOTE]`, `> [!TIP]`, …), fenced blocks `:::stat` / `:::flow` / `:::columns` (column divider line `|||`), and styled blockquotes. Document and presentation exports both run this pipeline. In presentation mode, lines starting with `> ` still become speaker notes **except** alert lines (`> [!…]`) and pull quotes (`> "…`), which stay on the slide.
 
-**Mermaid and charts:** Use fenced code with language `mermaid` for diagrams, and `chart` for a **Chart.js 4** config JSON object (same shape as `new Chart(canvas, config)`). The live preview renders these in the browser (Mermaid + Chart.js from CDN). For PDF/Word/HTML export, `scripts/diagram_embed.py` replaces them with static SVG (Mermaid via [Kroki](https://kroki.io)) and PNG ([QuickChart](https://quickchart.io)), which requires outbound HTTPS. Set `MD_DIAGRAM_FETCH=0` to skip embedding and leave the raw fenced blocks in the HTML.
+**Mermaid, Graphviz, and charts:** Use fenced code with language `mermaid` for Mermaid diagrams, `graphviz` or `dot` for Graphviz DOT, and `chart` for a **Chart.js 4** config JSON object (same shape as `new Chart(canvas, config)`). The live preview renders these in the browser (Mermaid + `@viz-js/viz` + Chart.js from CDN). For PDF/Word/HTML export, `scripts/diagram_embed.py` replaces them with static SVG (Mermaid and Graphviz via [Kroki](https://kroki.io)) and PNG ([QuickChart](https://quickchart.io)), which requires outbound HTTPS. Set `MD_DIAGRAM_FETCH=0` to skip embedding and leave the raw fenced blocks in the HTML.
 
 ## Dependencies
 

@@ -87,6 +87,16 @@ flowchart LR
   B --> C[Output]
 ```
 
+```graphviz
+digraph Org {
+  rankdir=TB;
+  CEO -> "VP Eng";
+  CEO -> "VP Sales";
+  "VP Eng" -> "Platform";
+  "VP Eng" -> "Product";
+}
+```
+
 ```chart
 {
   "type": "bar",

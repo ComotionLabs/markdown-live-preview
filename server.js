@@ -574,7 +574,9 @@ function buildPresentationElementsCss() {
 function buildDiagramElementsCss() {
   return `
         #doc-content .md-diagram { margin: 1.25rem 0; text-align: center; }
-        #doc-content .md-mermaid-svg svg { max-width: 100%; height: auto; display: inline-block; vertical-align: middle; }
+        #doc-content .md-diagram-svg svg,
+        #doc-content .md-mermaid-svg svg,
+        #doc-content .md-graphviz-svg svg { max-width: 100%; height: auto; display: inline-block; vertical-align: middle; }
         #doc-content .md-chart-wrap { margin: 1.25rem 0; max-width: 100%; overflow-x: auto; text-align: center; }
         #doc-content .md-chart-wrap canvas { max-width: 100%; height: auto !important; }
         @media print {
@@ -1054,7 +1056,7 @@ app.get('/export/pdf', async (req, res) => {
     // Let layout fully settle across two frames
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     
-    // Mermaid / Chart.js need extra time for SVG/canvas
+    // Mermaid / Graphviz / Chart.js need extra time for SVG/canvas
     await new Promise((r) => setTimeout(r, 1200));
     const marginTop = normalizeMm(pdfTheme.printMargins.top, 15);
     const marginRight = normalizeMm(pdfTheme.printMargins.right, 15);
@@ -1378,12 +1380,20 @@ app.get('/', (req, res) => {
         }
 
         let mermaidInitialized = false;
+        let vizInstancePromise = null;
         let chartJsInstances = [];
         function destroyChartJsInstances() {
           chartJsInstances.forEach(function (ch) {
             try { ch.destroy(); } catch (e) {}
           });
           chartJsInstances = [];
+        }
+        function getVizInstance() {
+          if (!vizInstancePromise) {
+            vizInstancePromise = import('https://cdn.jsdelivr.net/npm/@viz-js/viz@3/+esm')
+              .then(function (mod) { return mod.instance(); });
+          }
+          return vizInstancePromise;
         }
         function upgradeMermaidBlocks(root) {
           if (!root) return;
@@ -1395,6 +1405,42 @@ app.get('/', (req, res) => {
             div.textContent = (code.textContent || '').trim();
             pre.replaceWith(div);
           });
+        }
+        function upgradeGraphvizBlocks(root) {
+          if (!root) return;
+          Array.from(root.querySelectorAll('pre code.language-graphviz, pre code.language-dot')).forEach(function (code) {
+            const pre = code.parentElement;
+            if (!pre || pre.tagName !== 'PRE') return;
+            const div = document.createElement('div');
+            div.className = 'md-graphviz';
+            div.textContent = (code.textContent || '').trim();
+            pre.replaceWith(div);
+          });
+        }
+        async function renderGraphvizBlocks(root) {
+          if (!root) return;
+          const nodes = Array.from(root.querySelectorAll('.md-graphviz:not([data-rendered])'));
+          if (!nodes.length) return;
+          let viz;
+          try {
+            viz = await getVizInstance();
+          } catch (e) {
+            console.warn('Graphviz:', e);
+            return;
+          }
+          for (let i = 0; i < nodes.length; i++) {
+            const div = nodes[i];
+            const source = (div.textContent || '').trim();
+            if (!source) continue;
+            try {
+              const svg = viz.renderSVGElement(source);
+              div.replaceChildren(svg);
+              div.classList.add('md-graphviz-svg', 'md-diagram-svg');
+              div.setAttribute('data-rendered', '1');
+            } catch (e) {
+              console.warn('Graphviz:', e);
+            }
+          }
         }
         function upgradeChartBlocks(root) {
           if (!root || typeof Chart === 'undefined') return;
@@ -1424,6 +1470,7 @@ app.get('/', (req, res) => {
           if (!root) return;
           destroyChartJsInstances();
           upgradeMermaidBlocks(root);
+          upgradeGraphvizBlocks(root);
           upgradeChartBlocks(root);
           if (typeof mermaid !== 'undefined' && root.querySelector('.mermaid')) {
             try {
@@ -1436,6 +1483,7 @@ app.get('/', (req, res) => {
               console.warn('Mermaid:', e);
             }
           }
+          await renderGraphvizBlocks(root);
         }
         window.__renderDocDiagrams = renderDocDiagrams;
 

@@ -1,7 +1,9 @@
 """
-Embed Mermaid and Chart.js-style configs as static SVG/PNG for PDF/Word (WeasyPrint has no JS).
+Embed Mermaid, Graphviz, and Chart.js-style configs as static SVG/PNG for PDF/Word
+(WeasyPrint has no JS).
 
 - ```mermaid fenced blocks → Kroki (https://kroki.io) → inline SVG
+- ```graphviz / ```dot fenced blocks → Kroki → inline SVG
 - ```chart fenced blocks (Chart.js JSON) → QuickChart (https://quickchart.io) → inline PNG
 
 Set MD_DIAGRAM_FETCH=0 to skip network calls (leave fenced <pre><code> in HTML).
@@ -16,12 +18,17 @@ import re
 import urllib.error
 import urllib.request
 
-KROKI_MERMAID = os.environ.get("KROKI_MERMAID_URL", "https://kroki.io/mermaid")
+KROKI_MERMAID = os.environ.get("KROKI_MERMAID_URL", "https://kroki.io/mermaid/svg")
+KROKI_GRAPHVIZ = os.environ.get("KROKI_GRAPHVIZ_URL", "https://kroki.io/graphviz/svg")
 QUICKCHART = os.environ.get("QUICKCHART_URL", "https://quickchart.io/chart")
 
 # <pre><code class="language-mermaid">...</code></pre> (Python markdown)
 MERMAID_BLOCK = re.compile(
     r'<pre><code class="[^"]*\blanguage-mermaid\b[^"]*">([\s\S]*?)</code></pre>',
+    re.IGNORECASE,
+)
+GRAPHVIZ_BLOCK = re.compile(
+    r'<pre><code class="[^"]*\blanguage-(?:graphviz|dot)\b[^"]*">([\s\S]*?)</code></pre>',
     re.IGNORECASE,
 )
 CHART_BLOCK = re.compile(
@@ -42,14 +49,38 @@ def _fetch_bytes(url: str, data: bytes | None = None, content_type: str | None =
         return None
 
 
-def _kroki_mermaid_svg(source: str) -> str | None:
-    raw = _fetch_bytes(KROKI_MERMAID, data=source.encode("utf-8"), content_type="text/plain")
+def _kroki_svg(url: str, source: str) -> str | None:
+    # Prefer /{type}/svg endpoints; Accept helps when the URL omits the format.
+    try:
+        headers = {
+            "User-Agent": "markdown-live-preview-md-document/1.0",
+            "Content-Type": "text/plain",
+            "Accept": "image/svg+xml",
+        }
+        req = urllib.request.Request(
+            url,
+            data=source.encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            raw = resp.read()
+    except (urllib.error.URLError, OSError, ValueError):
+        return None
     if not raw:
         return None
     try:
         return raw.decode("utf-8")
     except UnicodeDecodeError:
         return None
+
+
+def _kroki_mermaid_svg(source: str) -> str | None:
+    return _kroki_svg(KROKI_MERMAID, source)
+
+
+def _kroki_graphviz_svg(source: str) -> str | None:
+    return _kroki_svg(KROKI_GRAPHVIZ, source)
 
 
 def _quickchart_png(config_obj: dict) -> bytes | None:
@@ -80,6 +111,13 @@ def _quickchart_png(config_obj: dict) -> bytes | None:
         return None
 
 
+def _svg_figure(kind: str, svg: str) -> str:
+    return (
+        f'<figure class="md-diagram md-diagram-{kind}" data-render="kroki">'
+        f'<div class="md-diagram-svg md-{kind}-svg">{svg}</div></figure>'
+    )
+
+
 def embed_diagrams_in_html(fragment: str, fetch_online: bool | None = None) -> str:
     """
     Replace diagram code blocks with embedded images/SVG. fragment is HTML (e.g. doc body).
@@ -101,12 +139,20 @@ def embed_diagrams_in_html(fragment: str, fetch_online: bool | None = None) -> s
         svg = _kroki_mermaid_svg(inner)
         if not svg or "<svg" not in svg.lower():
             return m.group(0)
-        return (
-            '<figure class="md-diagram md-diagram-mermaid" data-render="kroki">'
-            f'<div class="md-mermaid-svg">{svg}</div></figure>'
-        )
+        return _svg_figure("mermaid", svg)
 
     out = MERMAID_BLOCK.sub(repl_mermaid, fragment)
+
+    def repl_graphviz(m: re.Match) -> str:
+        inner = html_module.unescape(m.group(1).strip())
+        if not inner:
+            return m.group(0)
+        svg = _kroki_graphviz_svg(inner)
+        if not svg or "<svg" not in svg.lower():
+            return m.group(0)
+        return _svg_figure("graphviz", svg)
+
+    out = GRAPHVIZ_BLOCK.sub(repl_graphviz, out)
 
     def repl_chart(m: re.Match) -> str:
         raw = html_module.unescape(m.group(1).strip())
@@ -133,7 +179,11 @@ def embed_diagrams_in_html(fragment: str, fetch_online: bool | None = None) -> s
 # Appended to document/presentation HTML (skill); matches server.js intent
 DIAGRAM_CSS = """
 .md-diagram { margin: 1rem 0; text-align: center; }
-.md-mermaid-svg, .md-mermaid-svg svg { max-width: 100%; height: auto; }
-.md-mermaid-svg svg { display: inline-block; vertical-align: middle; }
+.md-diagram-svg, .md-diagram-svg svg,
+.md-mermaid-svg, .md-mermaid-svg svg,
+.md-graphviz-svg, .md-graphviz-svg svg { max-width: 100%; height: auto; }
+.md-diagram-svg svg, .md-mermaid-svg svg, .md-graphviz-svg svg {
+  display: inline-block; vertical-align: middle;
+}
 .md-chart-img { max-width: 100%; height: auto; display: inline-block; vertical-align: middle; }
 """

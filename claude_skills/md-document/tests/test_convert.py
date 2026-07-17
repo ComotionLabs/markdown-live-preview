@@ -258,6 +258,10 @@ def test_embed_diagrams_skips_when_offline():
 
     frag = '<pre><code class="language-mermaid">graph TD;A-->B</code></pre>'
     assert de.embed_diagrams_in_html(frag, fetch_online=False) == frag
+    gv = '<pre><code class="language-graphviz">digraph { a -> b }</code></pre>'
+    assert de.embed_diagrams_in_html(gv, fetch_online=False) == gv
+    dot = '<pre><code class="language-dot">digraph { a -> b }</code></pre>'
+    assert de.embed_diagrams_in_html(dot, fetch_online=False) == dot
 
 
 def test_markdown_rich_keeps_mermaid_fence_when_fetch_disabled(monkeypatch):
@@ -267,3 +271,16 @@ def test_markdown_rich_keeps_mermaid_fence_when_fetch_disabled(monkeypatch):
     html = mr.markdown_to_rich_html("```mermaid\ngraph LR\n  a --> b\n```\n")
     assert "language-mermaid" in html
     assert "graph LR" in html
+
+
+def test_markdown_rich_keeps_graphviz_fence_when_fetch_disabled(monkeypatch):
+    monkeypatch.setenv("MD_DIAGRAM_FETCH", "0")
+    import markdown_rich as mr
+
+    html = mr.markdown_to_rich_html("```graphviz\ndigraph G { a -> b }\n```\n")
+    assert "language-graphviz" in html
+    assert "digraph G" in html
+
+    html_dot = mr.markdown_to_rich_html("```dot\ndigraph G { a -> b }\n```\n")
+    assert "language-dot" in html_dot
+    assert "digraph G" in html_dot
