@@ -264,6 +264,20 @@ def test_embed_diagrams_skips_when_offline():
     assert de.embed_diagrams_in_html(dot, fetch_online=False) == dot
 
 
+def test_prefer_elk_layout_for_flowcharts():
+    import diagram_embed as de
+
+    out = de._prefer_elk_layout("flowchart TB\n  A --> B\n")
+    assert out.startswith("---\nconfig:\n  layout: elk\n---\n")
+    assert "flowchart TB" in out
+
+    already = "---\nconfig:\n  layout: dagre\n---\nflowchart TB\n  A --> B\n"
+    assert de._prefer_elk_layout(already) == already.strip()
+
+    seq = "sequenceDiagram\n  A->>B: hi\n"
+    assert de._prefer_elk_layout(seq) == seq.strip()
+
+
 def test_markdown_rich_keeps_mermaid_fence_when_fetch_disabled(monkeypatch):
     monkeypatch.setenv("MD_DIAGRAM_FETCH", "0")
     import markdown_rich as mr

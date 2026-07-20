@@ -76,7 +76,31 @@ def _kroki_svg(url: str, source: str) -> str | None:
 
 
 def _kroki_mermaid_svg(source: str) -> str | None:
-    return _kroki_svg(KROKI_MERMAID, source)
+    return _kroki_svg(KROKI_MERMAID, _prefer_elk_layout(source))
+
+
+_HAS_LAYOUT = re.compile(
+    r"(?is)(?:^---\s*\n[\s\S]*?\blayout\s*:|(?:%%\{\s*init\s*:[\s\S]*?defaultRenderer\s*[\"']?\s*:\s*[\"']?elk)|flowchart-elk\b)"
+)
+
+
+def _prefer_elk_layout(source: str) -> str:
+    """
+    Prefer ELK for flowcharts so edges from nodes inside subgraphs to nodes
+    outside keep the node endpoint (dagre often attaches those to the cluster border).
+    Matches live preview defaults. Skip if the diagram already chooses a layout.
+    """
+    text = (source or "").strip()
+    if not text or _HAS_LAYOUT.search(text):
+        return text
+    # Only flowcharts benefit; leave sequence/gantt/etc. alone.
+    if not re.search(r"(?im)^(flowchart|graph)\b", text):
+        # Mermaid config frontmatter may precede the diagram type
+        body = re.sub(r"(?s)^---\s*\n.*?---\s*\n", "", text, count=1)
+        body = re.sub(r"(?s)^%%\{.*?\}%%\s*", "", body, count=1)
+        if not re.search(r"(?im)^(flowchart|graph)\b", body.strip()):
+            return text
+    return "---\nconfig:\n  layout: elk\n---\n" + text
 
 
 def _kroki_graphviz_svg(source: str) -> str | None:

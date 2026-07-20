@@ -1354,7 +1354,15 @@ app.get('/', (req, res) => {
     </div>
     ${theme.printFooterEnabled ? `<div class="print-footer"><span class="footer-label">${theme.printFooterLabel} </span><span class="page-numbers"></span></div>` : ''}
 
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+      import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk/dist/mermaid-layout-elk.esm.min.mjs';
+      // ELK matches Mermaid Live for cross-subgraph edges (dagre often attaches those to the cluster border).
+      mermaid.registerLayoutLoaders(elkLayouts);
+      window.mermaid = mermaid;
+      window.__mermaidReady = true;
+      window.dispatchEvent(new Event('mermaid-ready'));
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -1387,6 +1395,25 @@ app.get('/', (req, res) => {
             try { ch.destroy(); } catch (e) {}
           });
           chartJsInstances = [];
+        }
+        function ensureMermaid() {
+          if (window.mermaid) return Promise.resolve(window.mermaid);
+          if (window.__mermaidReady && window.mermaid) return Promise.resolve(window.mermaid);
+          return new Promise(function (resolve, reject) {
+            var done = false;
+            function finish() {
+              if (done) return;
+              done = true;
+              if (window.mermaid) resolve(window.mermaid);
+              else reject(new Error('Mermaid failed to load'));
+            }
+            window.addEventListener('mermaid-ready', finish, { once: true });
+            // Module may have finished between the checks above and this listener.
+            if (window.mermaid) finish();
+            setTimeout(function () {
+              if (!done) finish();
+            }, 15000);
+          });
         }
         function getVizInstance() {
           if (!vizInstancePromise) {
@@ -1472,10 +1499,19 @@ app.get('/', (req, res) => {
           upgradeMermaidBlocks(root);
           upgradeGraphvizBlocks(root);
           upgradeChartBlocks(root);
-          if (typeof mermaid !== 'undefined' && root.querySelector('.mermaid')) {
+          if (root.querySelector('.mermaid')) {
             try {
+              const mermaid = await ensureMermaid();
+              if (!mermaid) throw new Error('Mermaid failed to load');
               if (!mermaidInitialized) {
-                mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'neutral' });
+                mermaid.initialize({
+                  startOnLoad: false,
+                  securityLevel: 'loose',
+                  theme: 'neutral',
+                  // Prefer ELK so edges from nodes inside subgraphs to outside nodes
+                  // keep the node endpoint (dagre often draws them from the cluster border).
+                  flowchart: { defaultRenderer: 'elk' },
+                });
                 mermaidInitialized = true;
               }
               await mermaid.run({ querySelector: '#doc-content .mermaid' });
